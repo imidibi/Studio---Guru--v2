@@ -987,3 +987,794 @@ extension Color {
         return String(format: "#%02X%02X%02X", r, g, b)
     }
 }
+
+// MARK: - Studio Guru 2.0 Session Management Models
+
+// MARK: - Session Enums
+
+enum SessionStatus: String, Codable, CaseIterable {
+    case planned
+    case active
+    case completed
+    case cancelled
+}
+
+enum SessionType: String, Codable, CaseIterable {
+    case tracking
+    case overdub
+    case songwriting
+    case rehearsal
+    case editing
+    case mixing
+    case mastering
+    case podcast
+    case liveRecording
+    case other
+}
+
+enum ProjectStatus: String, Codable, CaseIterable {
+    case active
+    case onHold
+    case completed
+    case archived
+}
+
+enum ProjectType: String, Codable, CaseIterable {
+    case album
+    case ep
+    case single
+    case podcast
+    case film
+    case commercial
+    case other
+}
+
+enum ContributionType: String, Codable, CaseIterable {
+    case songwriter
+    case composer
+    case lyricist
+    case arranger
+    case producer
+    case coProducer
+    case other
+}
+
+// MARK: - Person
+
+@Model
+final class Person {
+    var id: UUID = UUID()
+    var firstName: String = ""
+    var lastName: String = ""
+    var displayName: String = ""
+    var company: String = ""
+    var email: String = ""
+    var phone: String = ""
+    var website: String = ""
+    var notes: String = ""
+    
+    @Attribute(.externalStorage) var photoData: Data?
+    
+    var defaultRole: String = ""
+    var instrumentsRaw: [String] = []
+    
+    var isArchived: Bool = false
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
+    
+    @Relationship(deleteRule: .nullify, inverse: \SessionParticipant.person) var sessionParticipations: [SessionParticipant]? = []
+    @Relationship(deleteRule: .nullify, inverse: \Performance.person) var performances: [Performance]? = []
+    @Relationship(deleteRule: .nullify, inverse: \Contribution.person) var contributions: [Contribution]? = []
+    
+    init(firstName: String, lastName: String, displayName: String? = nil) {
+        self.id = UUID()
+        self.firstName = firstName
+        self.lastName = lastName
+        self.displayName = displayName ?? "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces)
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+        self.sessionParticipations = []
+        self.performances = []
+        self.contributions = []
+    }
+    
+    func markAsModified() {
+        self.modifiedAt = Date()
+    }
+    
+    var instruments: [String] {
+        get { instrumentsRaw }
+        set { instrumentsRaw = newValue }
+    }
+}
+
+// MARK: - Project
+
+@Model
+final class Project {
+    var id: UUID = UUID()
+    var name: String = ""
+    var artistName: String = ""
+    var clientName: String = ""
+    var projectTypeRaw: String = ProjectType.other.rawValue
+    var statusRaw: String = ProjectStatus.active.rawValue
+    var startDate: Date?
+    var endDate: Date?
+    var notes: String = ""
+    
+    var isArchived: Bool = false
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
+    
+    @Relationship(deleteRule: .nullify, inverse: \Session.project) var sessions: [Session]? = []
+    @Relationship(deleteRule: .nullify, inverse: \Work.project) var works: [Work]? = []
+    
+    init(name: String, artistName: String = "", clientName: String = "") {
+        self.id = UUID()
+        self.name = name
+        self.artistName = artistName
+        self.clientName = clientName
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+        self.sessions = []
+        self.works = []
+    }
+    
+    func markAsModified() {
+        self.modifiedAt = Date()
+    }
+    
+    var projectType: ProjectType {
+        get { ProjectType(rawValue: projectTypeRaw) ?? .other }
+        set { projectTypeRaw = newValue.rawValue }
+    }
+    
+    var status: ProjectStatus {
+        get { ProjectStatus(rawValue: statusRaw) ?? .active }
+        set { statusRaw = newValue.rawValue }
+    }
+}
+
+// MARK: - Work (Song)
+
+@Model
+final class Work {
+    var id: UUID = UUID()
+    var projectID: UUID?
+    var title: String = ""
+    var versionName: String = ""
+    var artistName: String = ""
+    var bpm: Double?
+    var key: String = ""
+    var timeSignature: String = ""
+    var isrc: String = ""
+    var iswc: String = ""
+    var proWorkID: String = ""
+    var notes: String = ""
+    
+    var isArchived: Bool = false
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
+    
+    var project: Project?
+    
+    @Relationship(deleteRule: .cascade, inverse: \SessionWork.work) var sessionWorks: [SessionWork]? = []
+    @Relationship(deleteRule: .nullify, inverse: \Performance.work) var performances: [Performance]? = []
+    @Relationship(deleteRule: .nullify, inverse: \Contribution.work) var contributions: [Contribution]? = []
+    
+    init(title: String, projectID: UUID? = nil) {
+        self.id = UUID()
+        self.title = title
+        self.projectID = projectID
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+        self.sessionWorks = []
+        self.performances = []
+        self.contributions = []
+    }
+    
+    func markAsModified() {
+        self.modifiedAt = Date()
+    }
+}
+
+// MARK: - Session
+
+@Model
+final class Session {
+    var id: UUID = UUID()
+    var studioID: UUID = UUID()  // CloudKit requires default value
+    var projectID: UUID?
+    var name: String = ""
+    var sessionDate: Date = Date()
+    var startTime: Date?
+    var endTime: Date?
+    var statusRaw: String = SessionStatus.planned.rawValue
+    var sessionTypeRaw: String = SessionType.other.rawValue
+    var artistName: String = ""
+    var clientName: String = ""
+    var notes: String = ""
+    
+    var isArchived: Bool = false
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
+    
+    var project: Project?
+    
+    @Relationship(deleteRule: .cascade, inverse: \SessionParticipant.session) var participants: [SessionParticipant]? = []
+    @Relationship(deleteRule: .cascade, inverse: \SessionWork.session) var works: [SessionWork]? = []
+    @Relationship(deleteRule: .cascade, inverse: \SessionEquipment.session) var equipment: [SessionEquipment]? = []
+    @Relationship(deleteRule: .cascade, inverse: \SessionConfigurationSnapshot.session) var configurationSnapshot: SessionConfigurationSnapshot?
+    
+    init(studioID: UUID, name: String, sessionDate: Date = Date()) {
+        self.id = UUID()
+        self.studioID = studioID
+        self.name = name
+        self.sessionDate = sessionDate
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+        self.participants = []
+        self.works = []
+        self.equipment = []
+    }
+    
+    func markAsModified() {
+        self.modifiedAt = Date()
+    }
+    
+    var status: SessionStatus {
+        get { SessionStatus(rawValue: statusRaw) ?? .planned }
+        set { statusRaw = newValue.rawValue }
+    }
+    
+    var sessionType: SessionType {
+        get { SessionType(rawValue: sessionTypeRaw) ?? .other }
+        set { sessionTypeRaw = newValue.rawValue }
+    }
+}
+
+// MARK: - SessionParticipant
+
+@Model
+final class SessionParticipant {
+    var id: UUID = UUID()
+    var sessionID: UUID = UUID()  // CloudKit requires default value
+    var personID: UUID = UUID()   // CloudKit requires default value
+    var role: String = ""
+    var notes: String = ""
+    var arrivalTime: Date?
+    var departureTime: Date?
+    
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
+    
+    var session: Session?
+    var person: Person?
+    
+    init(sessionID: UUID, personID: UUID, role: String = "") {
+        self.id = UUID()
+        self.sessionID = sessionID
+        self.personID = personID
+        self.role = role
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+    }
+    
+    func markAsModified() {
+        self.modifiedAt = Date()
+    }
+}
+
+// MARK: - SessionWork (Join entity for Session-Work many-to-many)
+
+@Model
+final class SessionWork {
+    var id: UUID = UUID()
+    var sessionID: UUID = UUID()  // CloudKit requires default value
+    var workID: UUID = UUID()     // CloudKit requires default value
+    var notes: String = ""
+    var sequenceNumber: Int = 0
+    
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
+    
+    var session: Session?
+    var work: Work?
+    
+    init(sessionID: UUID, workID: UUID, sequenceNumber: Int = 0) {
+        self.id = UUID()
+        self.sessionID = sessionID
+        self.workID = workID
+        self.sequenceNumber = sequenceNumber
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+    }
+    
+    func markAsModified() {
+        self.modifiedAt = Date()
+    }
+}
+
+// MARK: - Performance
+
+@Model
+final class Performance {
+    var id: UUID = UUID()
+    var sessionID: UUID = UUID()  // CloudKit requires default value
+    var workID: UUID = UUID()     // CloudKit requires default value
+    var personID: UUID = UUID()   // CloudKit requires default value
+    var instrument: String = ""
+    var performanceRole: String = ""
+    var notes: String = ""
+    
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
+    
+    var person: Person?
+    var work: Work?
+    
+    init(sessionID: UUID, workID: UUID, personID: UUID, instrument: String = "", performanceRole: String = "") {
+        self.id = UUID()
+        self.sessionID = sessionID
+        self.workID = workID
+        self.personID = personID
+        self.instrument = instrument
+        self.performanceRole = performanceRole
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+    }
+    
+    func markAsModified() {
+        self.modifiedAt = Date()
+    }
+}
+
+// MARK: - Contribution
+
+@Model
+final class Contribution {
+    var id: UUID = UUID()
+    var workID: UUID = UUID()     // CloudKit requires default value
+    var personID: UUID = UUID()   // CloudKit requires default value
+    var contributionTypeRaw: String = ContributionType.other.rawValue
+    var percentage: Double?
+    var notes: String = ""
+    
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
+    
+    var person: Person?
+    var work: Work?
+    
+    init(workID: UUID, personID: UUID, contributionType: ContributionType = .other) {
+        self.id = UUID()
+        self.workID = workID
+        self.personID = personID
+        self.contributionTypeRaw = contributionType.rawValue
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+    }
+    
+    func markAsModified() {
+        self.modifiedAt = Date()
+    }
+    
+    var contributionType: ContributionType {
+        get { ContributionType(rawValue: contributionTypeRaw) ?? .other }
+        set { contributionTypeRaw = newValue.rawValue }
+    }
+}
+
+// MARK: - SessionEquipment
+
+@Model
+final class SessionEquipment {
+    var id: UUID = UUID()
+    var sessionID: UUID = UUID()      // CloudKit requires default value
+    var equipmentID: UUID = UUID()    // CloudKit requires default value
+    var workID: UUID?
+    var personID: UUID?
+    var purpose: String = ""
+    var settings: String = ""
+    var notes: String = ""
+    
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
+    
+    var session: Session?
+    
+    init(sessionID: UUID, equipmentID: UUID, purpose: String = "") {
+        self.id = UUID()
+        self.sessionID = sessionID
+        self.equipmentID = equipmentID
+        self.purpose = purpose
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+    }
+    
+    func markAsModified() {
+        self.modifiedAt = Date()
+    }
+}
+
+// MARK: - SessionConfigurationSnapshot
+
+@Model
+final class SessionConfigurationSnapshot {
+    var id: UUID = UUID()
+    var sessionID: UUID = UUID()  // CloudKit requires default value
+    var snapshotVersion: Int = 1
+    
+    // Store the complete studio configuration as serialized data
+    // This preserves the exact setup used during the session
+    @Attribute(.externalStorage) var snapshotData: Data?
+    
+    // Canvas drawing data (annotations from that session)
+    @Attribute(.externalStorage) var canvasDrawingData: Data?
+    
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
+    
+    var session: Session?
+    
+    @Relationship(deleteRule: .cascade, inverse: \SnapshotDevice.snapshot) var devices: [SnapshotDevice]? = []
+    @Relationship(deleteRule: .cascade, inverse: \SnapshotConnection.snapshot) var connections: [SnapshotConnection]? = []
+    
+    init(sessionID: UUID) {
+        self.id = UUID()
+        self.sessionID = sessionID
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+        self.devices = []
+        self.connections = []
+    }
+    
+    func markAsModified() {
+        self.modifiedAt = Date()
+    }
+}
+
+// MARK: - SnapshotDevice (immutable copy of device state)
+
+@Model
+final class SnapshotDevice {
+    var id: UUID = UUID()
+    var originalDeviceID: UUID = UUID()  // CloudKit requires default value
+    var manufacturer: String = ""
+    var model: String = ""
+    var nickname: String = ""
+    var categoryRaw: String = DeviceCategory.other.rawValue
+    var serialNumber: String = ""
+    var location: String = ""
+    
+    // Positioning
+    var posX: Double = 200
+    var posY: Double = 200
+    var scale: Double = 1.0
+    var zIndex: Int = 0
+    
+    // Store device configuration as JSON
+    var configurationData: Data?
+    
+    var createdAt: Date = Date()
+    
+    var snapshot: SessionConfigurationSnapshot?
+    
+    init(originalDeviceID: UUID, manufacturer: String, model: String, nickname: String) {
+        self.id = UUID()
+        self.originalDeviceID = originalDeviceID
+        self.manufacturer = manufacturer
+        self.model = model
+        self.nickname = nickname
+        self.createdAt = Date()
+    }
+}
+
+// MARK: - SnapshotConnection (immutable copy of connection state)
+
+@Model
+final class SnapshotConnection {
+    var id: UUID = UUID()
+    var originalConnectionID: UUID = UUID()  // CloudKit requires default value
+    var fromDeviceId: UUID = UUID()          // CloudKit requires default value
+    var fromPortId: UUID = UUID()            // CloudKit requires default value
+    var fromChannelId: UUID = UUID()         // CloudKit requires default value
+    var toDeviceId: UUID = UUID()            // CloudKit requires default value
+    var toPortId: UUID = UUID()              // CloudKit requires default value
+    var toChannelId: UUID = UUID()           // CloudKit requires default value
+    var cableRaw: String = CableType.other.rawValue
+    var label: String = ""
+    var notes: String = ""
+    
+    var createdAt: Date = Date()
+    
+    var snapshot: SessionConfigurationSnapshot?
+    
+    init(originalConnectionID: UUID, fromDeviceId: UUID, fromPortId: UUID, fromChannelId: UUID,
+         toDeviceId: UUID, toPortId: UUID, toChannelId: UUID, label: String = "") {
+        self.id = UUID()
+        self.originalConnectionID = originalConnectionID
+        self.fromDeviceId = fromDeviceId
+        self.fromPortId = fromPortId
+        self.fromChannelId = fromChannelId
+        self.toDeviceId = toDeviceId
+        self.toPortId = toPortId
+        self.toChannelId = toChannelId
+        self.label = label
+        self.createdAt = Date()
+    }
+}
+
+// MARK: - Exportable Session Structures
+
+/// Codable representation of a session for export/import
+struct ExportableSession: Codable, Sendable {
+    let id: UUID
+    let studioID: UUID
+    let projectID: UUID?
+    let name: String
+    let sessionDate: Date
+    let startTime: Date?
+    let endTime: Date?
+    let statusRaw: String
+    let sessionTypeRaw: String
+    let artistName: String
+    let clientName: String
+    let notes: String
+    let isArchived: Bool
+    let createdAt: Date
+    let modifiedAt: Date
+    
+    let participants: [ExportableSessionParticipant]
+    let works: [ExportableSessionWork]
+    let equipment: [ExportableSessionEquipment]
+    let configurationSnapshot: ExportableSessionConfigurationSnapshot?
+    
+    init(from session: Session, participants: [SessionParticipant], works: [SessionWork],
+         equipment: [SessionEquipment], snapshot: SessionConfigurationSnapshot?) {
+        self.id = session.id
+        self.studioID = session.studioID
+        self.projectID = session.projectID
+        self.name = session.name
+        self.sessionDate = session.sessionDate
+        self.startTime = session.startTime
+        self.endTime = session.endTime
+        self.statusRaw = session.statusRaw
+        self.sessionTypeRaw = session.sessionTypeRaw
+        self.artistName = session.artistName
+        self.clientName = session.clientName
+        self.notes = session.notes
+        self.isArchived = session.isArchived
+        self.createdAt = session.createdAt
+        self.modifiedAt = session.modifiedAt
+        
+        self.participants = participants.map { ExportableSessionParticipant(from: $0) }
+        self.works = works.map { ExportableSessionWork(from: $0) }
+        self.equipment = equipment.map { ExportableSessionEquipment(from: $0) }
+        self.configurationSnapshot = snapshot.map { ExportableSessionConfigurationSnapshot(from: $0) }
+    }
+}
+
+struct ExportableSessionParticipant: Codable, Sendable {
+    let id: UUID
+    let sessionID: UUID
+    let personID: UUID
+    let role: String
+    let notes: String
+    let arrivalTime: Date?
+    let departureTime: Date?
+    
+    init(from participant: SessionParticipant) {
+        self.id = participant.id
+        self.sessionID = participant.sessionID
+        self.personID = participant.personID
+        self.role = participant.role
+        self.notes = participant.notes
+        self.arrivalTime = participant.arrivalTime
+        self.departureTime = participant.departureTime
+    }
+}
+
+struct ExportableSessionWork: Codable, Sendable {
+    let id: UUID
+    let sessionID: UUID
+    let workID: UUID
+    let notes: String
+    let sequenceNumber: Int
+    
+    init(from sessionWork: SessionWork) {
+        self.id = sessionWork.id
+        self.sessionID = sessionWork.sessionID
+        self.workID = sessionWork.workID
+        self.notes = sessionWork.notes
+        self.sequenceNumber = sessionWork.sequenceNumber
+    }
+}
+
+struct ExportableSessionEquipment: Codable, Sendable {
+    let id: UUID
+    let sessionID: UUID
+    let equipmentID: UUID
+    let workID: UUID?
+    let personID: UUID?
+    let purpose: String
+    let settings: String
+    let notes: String
+    
+    init(from equipment: SessionEquipment) {
+        self.id = equipment.id
+        self.sessionID = equipment.sessionID
+        self.equipmentID = equipment.equipmentID
+        self.workID = equipment.workID
+        self.personID = equipment.personID
+        self.purpose = equipment.purpose
+        self.settings = equipment.settings
+        self.notes = equipment.notes
+    }
+}
+
+struct ExportableSessionConfigurationSnapshot: Codable, Sendable {
+    let id: UUID
+    let sessionID: UUID
+    let snapshotVersion: Int
+    let snapshotData: Data?
+    let canvasDrawingData: Data?
+    let createdAt: Date
+    
+    init(from snapshot: SessionConfigurationSnapshot) {
+        self.id = snapshot.id
+        self.sessionID = snapshot.sessionID
+        self.snapshotVersion = snapshot.snapshotVersion
+        self.snapshotData = snapshot.snapshotData
+        self.canvasDrawingData = snapshot.canvasDrawingData
+        self.createdAt = snapshot.createdAt
+    }
+}
+
+struct ExportablePerson: Codable, Sendable {
+    let id: UUID
+    let firstName: String
+    let lastName: String
+    let displayName: String
+    let company: String
+    let email: String
+    let phone: String
+    let website: String
+    let notes: String
+    let photoData: Data?
+    let defaultRole: String
+    let instrumentsRaw: [String]
+    let isArchived: Bool
+    let createdAt: Date
+    let modifiedAt: Date
+    
+    init(from person: Person) {
+        self.id = person.id
+        self.firstName = person.firstName
+        self.lastName = person.lastName
+        self.displayName = person.displayName
+        self.company = person.company
+        self.email = person.email
+        self.phone = person.phone
+        self.website = person.website
+        self.notes = person.notes
+        self.photoData = person.photoData
+        self.defaultRole = person.defaultRole
+        self.instrumentsRaw = person.instrumentsRaw
+        self.isArchived = person.isArchived
+        self.createdAt = person.createdAt
+        self.modifiedAt = person.modifiedAt
+    }
+}
+
+struct ExportableProject: Codable, Sendable {
+    let id: UUID
+    let name: String
+    let artistName: String
+    let clientName: String
+    let projectTypeRaw: String
+    let statusRaw: String
+    let startDate: Date?
+    let endDate: Date?
+    let notes: String
+    let isArchived: Bool
+    let createdAt: Date
+    let modifiedAt: Date
+    
+    init(from project: Project) {
+        self.id = project.id
+        self.name = project.name
+        self.artistName = project.artistName
+        self.clientName = project.clientName
+        self.projectTypeRaw = project.projectTypeRaw
+        self.statusRaw = project.statusRaw
+        self.startDate = project.startDate
+        self.endDate = project.endDate
+        self.notes = project.notes
+        self.isArchived = project.isArchived
+        self.createdAt = project.createdAt
+        self.modifiedAt = project.modifiedAt
+    }
+}
+
+struct ExportableWork: Codable, Sendable {
+    let id: UUID
+    let projectID: UUID?
+    let title: String
+    let versionName: String
+    let artistName: String
+    let bpm: Double?
+    let key: String
+    let timeSignature: String
+    let isrc: String
+    let iswc: String
+    let proWorkID: String
+    let notes: String
+    let isArchived: Bool
+    let createdAt: Date
+    let modifiedAt: Date
+    
+    init(from work: Work) {
+        self.id = work.id
+        self.projectID = work.projectID
+        self.title = work.title
+        self.versionName = work.versionName
+        self.artistName = work.artistName
+        self.bpm = work.bpm
+        self.key = work.key
+        self.timeSignature = work.timeSignature
+        self.isrc = work.isrc
+        self.iswc = work.iswc
+        self.proWorkID = work.proWorkID
+        self.notes = work.notes
+        self.isArchived = work.isArchived
+        self.createdAt = work.createdAt
+        self.modifiedAt = work.modifiedAt
+    }
+}
+
+struct ExportablePerformance: Codable, Sendable {
+    let id: UUID
+    let sessionID: UUID
+    let workID: UUID
+    let personID: UUID
+    let instrument: String
+    let performanceRole: String
+    let notes: String
+    let createdAt: Date
+    let modifiedAt: Date
+    
+    init(from performance: Performance) {
+        self.id = performance.id
+        self.sessionID = performance.sessionID
+        self.workID = performance.workID
+        self.personID = performance.personID
+        self.instrument = performance.instrument
+        self.performanceRole = performance.performanceRole
+        self.notes = performance.notes
+        self.createdAt = performance.createdAt
+        self.modifiedAt = performance.modifiedAt
+    }
+}
+
+struct ExportableContribution: Codable, Sendable {
+    let id: UUID
+    let workID: UUID
+    let personID: UUID
+    let contributionTypeRaw: String
+    let percentage: Double?
+    let notes: String
+    let createdAt: Date
+    let modifiedAt: Date
+    
+    init(from contribution: Contribution) {
+        self.id = contribution.id
+        self.workID = contribution.workID
+        self.personID = contribution.personID
+        self.contributionTypeRaw = contribution.contributionTypeRaw
+        self.percentage = contribution.percentage
+        self.notes = contribution.notes
+        self.createdAt = contribution.createdAt
+        self.modifiedAt = contribution.modifiedAt
+    }
+}

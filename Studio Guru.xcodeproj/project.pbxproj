@@ -12,6 +12,22 @@
 		5F4B730C2FC91176006E135F /* AssignGearSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F4B730B2FC91176006E135F /* AssignGearSheet.swift */; };
 		5F8300762FF300D800550984 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F8300752FF300D800550984 /* AppDelegate.swift */; };
 		5F847FB62FEC614700200571 /* BackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F847FB52FEC614700200571 /* BackupManager.swift */; };
+		5F94AF9A302BC44200D89BBD /* SessionMigrationHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AF99302BC44200D89BBD /* SessionMigrationHelper.swift */; };
+		5F94AF9C302BC5A100D89BBD /* SESSION_MANAGEMENT_IMPLEMENTATION.md in Resources */ = {isa = PBXBuildFile; fileRef = 5F94AF9B302BC5A100D89BBD /* SESSION_MANAGEMENT_IMPLEMENTATION.md */; };
+		5F94AF9E302BC76A00D89BBD /* MainNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AF9D302BC76A00D89BBD /* MainNavigationView.swift */; };
+		5F94AFA0302BC77900D89BBD /* PeopleListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AF9F302BC77900D89BBD /* PeopleListView.swift */; };
+		5F94AFA2302BC79000D89BBD /* PersonDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFA1302BC79000D89BBD /* PersonDetailView.swift */; };
+		5F94AFA4302BC7A900D89BBD /* PersonEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFA3302BC7A900D89BBD /* PersonEditView.swift */; };
+		5F94AFA6302BC7C300D89BBD /* ProjectsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFA5302BC7C300D89BBD /* ProjectsListView.swift */; };
+		5F94AFA8302BC7DF00D89BBD /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFA7302BC7DF00D89BBD /* ProjectDetailView.swift */; };
+		5F94AFAA302BC7EF00D89BBD /* ProjectEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFA9302BC7EF00D89BBD /* ProjectEditView.swift */; };
+		5F94AFAC302BC7FD00D89BBD /* WorksListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFAB302BC7FD00D89BBD /* WorksListView.swift */; };
+		5F94AFAE302BC81400D89BBD /* SessionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFAD302BC81400D89BBD /* SessionsListView.swift */; };
+		5F94AFB0302BC83C00D89BBD /* WorkDetailEditViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFAF302BC83C00D89BBD /* WorkDetailEditViews.swift */; };
+		5F94AFB2302BC85400D89BBD /* SessionCreationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFB1302BC85400D89BBD /* SessionCreationView.swift */; };
+		5F94AFB4302BC88100D89BBD /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFB3302BC88100D89BBD /* SessionDetailView.swift */; };
+		5F94AFB6302BC8BD00D89BBD /* SessionAddViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFB5302BC8BD00D89BBD /* SessionAddViews.swift */; };
+		5F94AFB8302BC9EF00D89BBD /* UI_IMPLEMENTATION_COMPLETE.md in Resources */ = {isa = PBXBuildFile; fileRef = 5F94AFB7302BC9EF00D89BBD /* UI_IMPLEMENTATION_COMPLETE.md */; };
 		5FF331D92F9EF13200303C39 /* CanvasAnnotations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FF331D82F9EF13200303C39 /* CanvasAnnotations.swift */; };
 /* End PBXBuildFile section */
 
@@ -21,6 +37,22 @@
 		5F4B730B2FC91176006E135F /* AssignGearSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssignGearSheet.swift; sourceTree = "<group>"; };
 		5F8300752FF300D800550984 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		5F847FB52FEC614700200571 /* BackupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManager.swift; sourceTree = "<group>"; };
+		5F94AF99302BC44200D89BBD /* SessionMigrationHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionMigrationHelper.swift; sourceTree = "<group>"; };
+		5F94AF9B302BC5A100D89BBD /* SESSION_MANAGEMENT_IMPLEMENTATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SESSION_MANAGEMENT_IMPLEMENTATION.md; sourceTree = "<group>"; };
+		5F94AF9D302BC76A00D89BBD /* MainNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainNavigationView.swift; sourceTree = "<group>"; };
+		5F94AF9F302BC77900D89BBD /* PeopleListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleListView.swift; sourceTree = "<group>"; };
+		5F94AFA1302BC79000D89BBD /* PersonDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonDetailView.swift; sourceTree = "<group>"; };
+		5F94AFA3302BC7A900D89BBD /* PersonEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonEditView.swift; sourceTree = "<group>"; };
+		5F94AFA5302BC7C300D89BBD /* ProjectsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsListView.swift; sourceTree = "<group>"; };
+		5F94AFA7302BC7DF00D89BBD /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
+		5F94AFA9302BC7EF00D89BBD /* ProjectEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectEditView.swift; sourceTree = "<group>"; };
+		5F94AFAB302BC7FD00D89BBD /* WorksListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorksListView.swift; sourceTree = "<group>"; };
+		5F94AFAD302BC81400D89BBD /* SessionsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsListView.swift; sourceTree = "<group>"; };
+		5F94AFAF302BC83C00D89BBD /* WorkDetailEditViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkDetailEditViews.swift; sourceTree = "<group>"; };
+		5F94AFB1302BC85400D89BBD /* SessionCreationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionCreationView.swift; sourceTree = "<group>"; };
+		5F94AFB3302BC88100D89BBD /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
+		5F94AFB5302BC8BD00D89BBD /* SessionAddViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionAddViews.swift; sourceTree = "<group>"; };
+		5F94AFB7302BC9EF00D89BBD /* UI_IMPLEMENTATION_COMPLETE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = UI_IMPLEMENTATION_COMPLETE.md; sourceTree = "<group>"; };
 		5FF331D82F9EF13200303C39 /* CanvasAnnotations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasAnnotations.swift; sourceTree = "<group>"; };
 		5FFE5C962F37D70900EB00B9 /* Studio Guru.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Studio Guru.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -55,6 +87,22 @@
 				5F2C600A2FE590D1000F29AE /* iCloudDocumentManager.swift */,
 				5F847FB52FEC614700200571 /* BackupManager.swift */,
 				5F8300752FF300D800550984 /* AppDelegate.swift */,
+				5F94AF99302BC44200D89BBD /* SessionMigrationHelper.swift */,
+				5F94AF9B302BC5A100D89BBD /* SESSION_MANAGEMENT_IMPLEMENTATION.md */,
+				5F94AF9D302BC76A00D89BBD /* MainNavigationView.swift */,
+				5F94AF9F302BC77900D89BBD /* PeopleListView.swift */,
+				5F94AFA1302BC79000D89BBD /* PersonDetailView.swift */,
+				5F94AFA3302BC7A900D89BBD /* PersonEditView.swift */,
+				5F94AFA5302BC7C300D89BBD /* ProjectsListView.swift */,
+				5F94AFA7302BC7DF00D89BBD /* ProjectDetailView.swift */,
+				5F94AFA9302BC7EF00D89BBD /* ProjectEditView.swift */,
+				5F94AFAB302BC7FD00D89BBD /* WorksListView.swift */,
+				5F94AFAD302BC81400D89BBD /* SessionsListView.swift */,
+				5F94AFAF302BC83C00D89BBD /* WorkDetailEditViews.swift */,
+				5F94AFB1302BC85400D89BBD /* SessionCreationView.swift */,
+				5F94AFB3302BC88100D89BBD /* SessionDetailView.swift */,
+				5F94AFB5302BC8BD00D89BBD /* SessionAddViews.swift */,
+				5F94AFB7302BC9EF00D89BBD /* UI_IMPLEMENTATION_COMPLETE.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -131,6 +179,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5F94AFB8302BC9EF00D89BBD /* UI_IMPLEMENTATION_COMPLETE.md in Resources */,
+				5F94AF9C302BC5A100D89BBD /* SESSION_MANAGEMENT_IMPLEMENTATION.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,9 +214,23 @@
 				5F8300762FF300D800550984 /* AppDelegate.swift in Sources */,
 				5F02DB072FE3081200CA8F43 /* iCloudDiagnostics.swift in Sources */,
 				5F2C600B2FE590D1000F29AE /* iCloudDocumentManager.swift in Sources */,
+				5F94AFB6302BC8BD00D89BBD /* SessionAddViews.swift in Sources */,
 				5FF331D92F9EF13200303C39 /* CanvasAnnotations.swift in Sources */,
 				5F847FB62FEC614700200571 /* BackupManager.swift in Sources */,
+				5F94AFB4302BC88100D89BBD /* SessionDetailView.swift in Sources */,
+				5F94AFB2302BC85400D89BBD /* SessionCreationView.swift in Sources */,
+				5F94AFAA302BC7EF00D89BBD /* ProjectEditView.swift in Sources */,
+				5F94AFAC302BC7FD00D89BBD /* WorksListView.swift in Sources */,
+				5F94AFA2302BC79000D89BBD /* PersonDetailView.swift in Sources */,
+				5F94AF9A302BC44200D89BBD /* SessionMigrationHelper.swift in Sources */,
+				5F94AFA0302BC77900D89BBD /* PeopleListView.swift in Sources */,
+				5F94AF9E302BC76A00D89BBD /* MainNavigationView.swift in Sources */,
+				5F94AFA4302BC7A900D89BBD /* PersonEditView.swift in Sources */,
+				5F94AFB0302BC83C00D89BBD /* WorkDetailEditViews.swift in Sources */,
+				5F94AFA6302BC7C300D89BBD /* ProjectsListView.swift in Sources */,
 				5F4B730C2FC91176006E135F /* AssignGearSheet.swift in Sources */,
+				5F94AFA8302BC7DF00D89BBD /* ProjectDetailView.swift in Sources */,
+				5F94AFAE302BC81400D89BBD /* SessionsListView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -297,7 +361,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = "Studio Guru/Studio Guru.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 27;
 				DEVELOPMENT_TEAM = BSUPN2VUX7;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -321,7 +385,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.35;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ianmiller.studioguru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -347,7 +411,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = "Studio Guru/Studio Guru.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 27;
 				DEVELOPMENT_TEAM = BSUPN2VUX7;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -371,7 +435,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.35;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ianmiller.studioguru;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;

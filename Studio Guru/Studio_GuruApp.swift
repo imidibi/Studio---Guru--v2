@@ -24,7 +24,9 @@ struct Studio_GuruApp: App {
 
     var sharedModelContainer: ModelContainer = {
         // SwiftData schema - migration happens automatically when models change
+        // Studio Guru 2.0: Added Session, Project, Person, Work and related entities
         let schema = Schema([
+            // Core studio models (v1.0)
             Studio.self,
             DeviceInstance.self,
             Port.self,
@@ -33,7 +35,20 @@ struct Studio_GuruApp: App {
             DocLink.self,
             ConnectionBundleModel.self,
             ConnectionEdgeModel.self,
-            EndpointNameModel.self
+            EndpointNameModel.self,
+            // Session management models (v2.0)
+            Person.self,
+            Project.self,
+            Work.self,
+            Session.self,
+            SessionParticipant.self,
+            SessionWork.self,
+            Performance.self,
+            Contribution.self,
+            SessionEquipment.self,
+            SessionConfigurationSnapshot.self,
+            SnapshotDevice.self,
+            SnapshotConnection.self
         ])
         
         // IMPORTANT: Use SwiftData's automatic CloudKit sync
@@ -186,7 +201,7 @@ struct Studio_GuruApp: App {
     
     var body: some Scene {
         WindowGroup {
-            StudioCanvasView()
+            MainNavigationView()
                 .environmentObject(storeManager)
                 .onAppear {
                     // Start monitoring CloudKit sync events
