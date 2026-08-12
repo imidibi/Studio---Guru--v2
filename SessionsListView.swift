@@ -42,90 +42,66 @@ struct SessionsListView: View {
     }
     
     var body: some View {
-        NavigationSplitView {
-            VStack(spacing: 0) {
-                // Filters
-                VStack(spacing: 8) {
-                    Picker("Status", selection: $statusFilter) {
-                        Text("All").tag(nil as SessionStatus?)
-                        ForEach(SessionStatus.allCases, id: \.self) { status in
-                            Text(status.rawValue.capitalized).tag(status as SessionStatus?)
-                        }
+        VStack(spacing: 0) {
+            // Filters
+            VStack(spacing: 8) {
+                Picker("Status", selection: $statusFilter) {
+                    Text("All").tag(nil as SessionStatus?)
+                    ForEach(SessionStatus.allCases, id: \.self) { status in
+                        Text(status.rawValue.capitalized).tag(status as SessionStatus?)
                     }
-                    .pickerStyle(.segmented)
-                    
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack {
-                            Button(typeFilter == nil ? "All Types" : "All") {
-                                typeFilter = nil
+                }
+                .pickerStyle(.segmented)
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        Button(typeFilter == nil ? "All Types" : "All") {
+                            typeFilter = nil
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(typeFilter == nil ? .blue : .gray)
+                        
+                        ForEach(SessionType.allCases, id: \.self) { type in
+                            Button(type.rawValue.capitalized) {
+                                typeFilter = type
                             }
                             .buttonStyle(.bordered)
-                            .tint(typeFilter == nil ? .blue : .gray)
-                            
-                            ForEach(SessionType.allCases, id: \.self) { type in
-                                Button(type.rawValue.capitalized) {
-                                    typeFilter = type
-                                }
-                                .buttonStyle(.bordered)
-                                .tint(typeFilter == type ? .blue : .gray)
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
-                }
-                .padding(.vertical, 8)
-                
-                List(selection: $selectedSession) {
-                    ForEach(filteredSessions) { session in
-                        NavigationLink(value: session) {
-                            SessionRowView(session: session, studios: studios)
+                            .tint(typeFilter == type ? .blue : .gray)
                         }
                     }
+                    .padding(.horizontal)
                 }
             }
-            .navigationTitle("Sessions")
-            .searchable(text: $searchText, prompt: "Search sessions")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showingNewSession = true
-                    } label: {
-                        Label("New Session", systemImage: "plus")
-                    }
-                    .disabled(studios.filter { !$0.isSystemStudio }.isEmpty)
-                }
-                
-                ToolbarItem(placement: .automatic) {
-                    Toggle(isOn: $showArchived) {
-                        Label("Show Archived", systemImage: "archivebox")
+            .padding(.vertical, 8)
+            
+            List {
+                ForEach(filteredSessions) { session in
+                    NavigationLink(destination: SessionDetailView(session: session)) {
+                        SessionRowView(session: session, studios: studios)
                     }
                 }
             }
-            .sheet(isPresented: $showingNewSession) {
-                SessionCreationView()
-            }
-        } detail: {
-            if let session = selectedSession {
-                SessionDetailView(session: session)
-            } else {
-                VStack(spacing: 16) {
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.secondary)
-                    
-                    Text("Select a session")
-                        .font(.title2)
-                        .foregroundStyle(.secondary)
-                    
-                    if studios.filter({ !$0.isSystemStudio }).isEmpty {
-                        Text("Create a studio first to start tracking sessions")
-                            .font(.subheadline)
-                            .foregroundStyle(.tertiary)
-                            .multilineTextAlignment(.center)
-                    }
+        }
+        .navigationTitle("Sessions")
+        .searchable(text: $searchText, prompt: "Search sessions")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingNewSession = true
+                } label: {
+                    Label("New Session", systemImage: "plus")
                 }
-                .padding()
+                .disabled(studios.filter { !$0.isSystemStudio }.isEmpty)
             }
+            
+            ToolbarItem(placement: .automatic) {
+                Toggle(isOn: $showArchived) {
+                    Label("Show Archived", systemImage: "archivebox")
+                }
+            }
+        }
+        .sheet(isPresented: $showingNewSession) {
+            SessionCreationView()
         }
     }
 }

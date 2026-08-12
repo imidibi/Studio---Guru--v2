@@ -118,19 +118,33 @@ struct MainNavigationView: View {
     private func destinationView(for tab: NavigationTab) -> some View {
         switch tab {
         case .dashboard:
-            DashboardView()
+            NavigationStack {
+                DashboardView()
+            }
         case .calendar:
-            CalendarView()
+            NavigationStack {
+                CalendarView()
+            }
         case .sessions:
-            SessionsListView()
+            NavigationStack {
+                SessionsListView()
+            }
         case .studios:
-            StudioCanvasView()
+            NavigationStack {
+                StudioCanvasView()
+            }
         case .people:
-            PeopleListView()
+            NavigationStack {
+                PeopleListView()
+            }
         case .projects:
-            ProjectsListView()
+            NavigationStack {
+                ProjectsListView()
+            }
         case .works:
-            WorksListView()
+            NavigationStack {
+                WorksListView()
+            }
         }
     }
     #endif

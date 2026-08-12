@@ -36,53 +36,44 @@ struct ProjectsListView: View {
     }
     
     var body: some View {
-        NavigationSplitView {
-            VStack(spacing: 0) {
-                // Status filter
-                Picker("Status", selection: $statusFilter) {
-                    Text("All").tag(nil as ProjectStatus?)
-                    ForEach(ProjectStatus.allCases, id: \.self) { status in
-                        Text(status.rawValue.capitalized).tag(status as ProjectStatus?)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding()
-                
-                List(selection: $selectedProject) {
-                    ForEach(filteredProjects) { project in
-                        NavigationLink(value: project) {
-                            ProjectRowView(project: project)
-                        }
-                    }
+        VStack(spacing: 0) {
+            // Status filter
+            Picker("Status", selection: $statusFilter) {
+                Text("All").tag(nil as ProjectStatus?)
+                ForEach(ProjectStatus.allCases, id: \.self) { status in
+                    Text(status.rawValue.capitalized).tag(status as ProjectStatus?)
                 }
             }
-            .navigationTitle("Projects")
-            .searchable(text: $searchText, prompt: "Search projects")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showingAddProject = true
-                    } label: {
-                        Label("Add Project", systemImage: "plus")
-                    }
-                }
-                
-                ToolbarItem(placement: .automatic) {
-                    Toggle(isOn: $showArchived) {
-                        Label("Show Archived", systemImage: "archivebox")
+            .pickerStyle(.segmented)
+            .padding()
+            
+            List {
+                ForEach(filteredProjects) { project in
+                    NavigationLink(destination: ProjectDetailView(project: project)) {
+                        ProjectRowView(project: project)
                     }
                 }
             }
-            .sheet(isPresented: $showingAddProject) {
-                ProjectEditView(project: nil)
+        }
+        .navigationTitle("Projects")
+        .searchable(text: $searchText, prompt: "Search projects")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingAddProject = true
+                } label: {
+                    Label("Add Project", systemImage: "plus")
+                }
             }
-        } detail: {
-            if let project = selectedProject {
-                ProjectDetailView(project: project)
-            } else {
-                Text("Select a project")
-                    .foregroundStyle(.secondary)
+            
+            ToolbarItem(placement: .automatic) {
+                Toggle(isOn: $showArchived) {
+                    Label("Show Archived", systemImage: "archivebox")
+                }
             }
+        }
+        .sheet(isPresented: $showingAddProject) {
+            ProjectEditView(project: nil)
         }
     }
 }

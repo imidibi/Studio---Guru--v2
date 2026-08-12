@@ -33,41 +33,32 @@ struct PeopleListView: View {
     }
     
     var body: some View {
-        NavigationSplitView {
-            List(selection: $selectedPerson) {
-                ForEach(filteredPeople) { person in
-                    NavigationLink(value: person) {
-                        PersonRowView(person: person)
-                    }
+        List {
+            ForEach(filteredPeople) { person in
+                NavigationLink(destination: PersonDetailView(person: person)) {
+                    PersonRowView(person: person)
                 }
             }
-            .navigationTitle("People")
-            .searchable(text: $searchText, prompt: "Search people")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showingAddPerson = true
-                    } label: {
-                        Label("Add Person", systemImage: "plus")
-                    }
-                }
-                
-                ToolbarItem(placement: .automatic) {
-                    Toggle(isOn: $showArchived) {
-                        Label("Show Archived", systemImage: "archivebox")
-                    }
+        }
+        .navigationTitle("People")
+        .searchable(text: $searchText, prompt: "Search people")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingAddPerson = true
+                } label: {
+                    Label("Add Person", systemImage: "plus")
                 }
             }
-            .sheet(isPresented: $showingAddPerson) {
-                PersonEditView(person: nil)
+            
+            ToolbarItem(placement: .automatic) {
+                Toggle(isOn: $showArchived) {
+                    Label("Show Archived", systemImage: "archivebox")
+                }
             }
-        } detail: {
-            if let person = selectedPerson {
-                PersonDetailView(person: person)
-            } else {
-                Text("Select a person")
-                    .foregroundStyle(.secondary)
-            }
+        }
+        .sheet(isPresented: $showingAddPerson) {
+            PersonEditView(person: nil)
         }
     }
 }

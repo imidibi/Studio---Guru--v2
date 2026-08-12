@@ -31,41 +31,32 @@ struct WorksListView: View {
     }
     
     var body: some View {
-        NavigationSplitView {
-            List(selection: $selectedWork) {
-                ForEach(filteredWorks) { work in
-                    NavigationLink(value: work) {
-                        WorkRowView(work: work)
-                    }
+        List {
+            ForEach(filteredWorks) { work in
+                NavigationLink(destination: WorkDetailView(work: work)) {
+                    WorkRowView(work: work)
                 }
             }
-            .navigationTitle("Songs")
-            .searchable(text: $searchText, prompt: "Search songs")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showingAddWork = true
-                    } label: {
-                        Label("Add Song", systemImage: "plus")
-                    }
-                }
-                
-                ToolbarItem(placement: .automatic) {
-                    Toggle(isOn: $showArchived) {
-                        Label("Show Archived", systemImage: "archivebox")
-                    }
+        }
+        .navigationTitle("Songs")
+        .searchable(text: $searchText, prompt: "Search songs")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingAddWork = true
+                } label: {
+                    Label("Add Song", systemImage: "plus")
                 }
             }
-            .sheet(isPresented: $showingAddWork) {
-                WorkEditView(work: nil)
+            
+            ToolbarItem(placement: .automatic) {
+                Toggle(isOn: $showArchived) {
+                    Label("Show Archived", systemImage: "archivebox")
+                }
             }
-        } detail: {
-            if let work = selectedWork {
-                WorkDetailView(work: work)
-            } else {
-                Text("Select a song")
-                    .foregroundStyle(.secondary)
-            }
+        }
+        .sheet(isPresented: $showingAddWork) {
+            WorkEditView(work: nil)
         }
     }
 }
