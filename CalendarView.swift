@@ -460,19 +460,35 @@ struct CalendarSessionCard: View {
         studios.first { $0.id == session.studioID }
     }
     
+    var statusColor: Color {
+        switch session.status {
+        case .planned: return .blue
+        case .active: return .green
+        case .completed: return .gray
+        case .cancelled: return .red
+        }
+    }
+    
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(spacing: 16) {
+            // Status indicator bar
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(statusColor.gradient)
+                .frame(width: 4)
+            
+            VStack(alignment: .leading, spacing: 6) {
                 Text(session.name)
                     .font(.headline)
+                    .foregroundStyle(.primary)
                 
                 if let studio = studio {
                     Label(studio.name, systemImage: "building.2")
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
                 
-                HStack {
+                HStack(spacing: 12) {
                     if showDate {
                         Label {
                             Text(session.sessionDate, style: .date)
@@ -485,9 +501,9 @@ struct CalendarSessionCard: View {
                     
                     if let startTime = session.startTime {
                         Label {
-                            Text(startTime, style: .time)
+                            Text(startTime.formatted(date: .omitted, time: .shortened))
                         } icon: {
-                            Image(systemName: "clock")
+                            Image(systemName: "clock.fill")
                         }
                         .font(.caption)
                         .foregroundStyle(.tertiary)
@@ -501,16 +517,26 @@ struct CalendarSessionCard: View {
             
             Spacer()
             
-            SessionStatusBadge(status: session.status)
+            // Status badge
+            Text(session.status.rawValue.capitalized)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(statusColor.gradient)
+                .clipShape(Capsule())
+                .shadow(color: statusColor.opacity(0.3), radius: 3, x: 0, y: 2)
         }
-        .padding()
-        #if os(macOS)
-        .background(Color(nsColor: .controlBackgroundColor))
-        #else
-        .background(Color(.systemBackground))
-        #endif
-        .cornerRadius(8)
-        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 3)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+        }
     }
 }
 
@@ -522,35 +548,6 @@ struct WeekSessionCard: View {
         studios.first { $0.id == session.studioID }
     }
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if let startTime = session.startTime {
-                Text(startTime, style: .time)
-                    .font(.caption2.bold())
-                    .foregroundStyle(.secondary)
-            }
-            
-            Text(session.name)
-                .font(.caption)
-                .lineLimit(2)
-            
-            if let studio = studio {
-                Text(studio.name)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(1)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(6)
-        .background(sessionColor.opacity(0.2))
-        .cornerRadius(4)
-        .overlay(
-            RoundedRectangle(cornerRadius: 4)
-                .strokeBorder(sessionColor, lineWidth: 1)
-        )
-    }
-    
     var sessionColor: Color {
         switch session.status {
         case .planned: return .blue
@@ -558,6 +555,47 @@ struct WeekSessionCard: View {
         case .completed: return .gray
         case .cancelled: return .red
         }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // Time with icon
+            if let startTime = session.startTime {
+                HStack(spacing: 4) {
+                    Image(systemName: "clock.fill")
+                        .font(.caption2)
+                        .foregroundStyle(sessionColor)
+                    Text(startTime.formatted(date: .omitted, time: .shortened))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(sessionColor)
+                }
+            }
+            
+            // Session name
+            Text(session.name)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+            
+            // Studio name
+            if let studio = studio {
+                Text(studio.name)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(sessionColor.gradient.opacity(0.12))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(sessionColor.opacity(0.3), lineWidth: 1.5)
+        }
+        .shadow(color: sessionColor.opacity(0.1), radius: 2, x: 0, y: 1)
     }
 }
 
@@ -574,14 +612,22 @@ struct MonthSessionDot: View {
     }
     
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
             Circle()
-                .fill(sessionColor)
+                .fill(sessionColor.gradient)
                 .frame(width: 6, height: 6)
+                .shadow(color: sessionColor.opacity(0.5), radius: 2, x: 0, y: 1)
             
             Text(session.name)
                 .font(.caption2)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background {
+            Capsule()
+                .fill(sessionColor.opacity(0.08))
         }
     }
 }

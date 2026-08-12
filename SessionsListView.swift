@@ -114,60 +114,75 @@ struct SessionRowView: View {
         studios.first { $0.id == session.studioID }
     }
     
+    var statusColor: Color {
+        switch session.status {
+        case .planned: return .blue
+        case .active: return .green
+        case .completed: return .gray
+        case .cancelled: return .red
+        }
+    }
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(session.name)
-                    .font(.headline)
-                
-                Spacer()
-                
-                SessionStatusBadge(status: session.status)
-            }
+        HStack(spacing: 12) {
+            // Status indicator
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(statusColor.gradient)
+                .frame(width: 4, height: 48)
             
-            HStack(spacing: 12) {
-                Label {
-                    Text(session.sessionDate, format: .dateTime.month().day().year())
-                } icon: {
-                    Image(systemName: "calendar")
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                
-                if let studio = studio {
-                    Label(studio.name, systemImage: "building.2")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(session.name)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    
+                    Spacer()
+                    
+                    // Status badge
+                    Text(session.status.rawValue.capitalized)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(statusColor.gradient)
+                        .clipShape(Capsule())
                 }
                 
-                Label(session.sessionType.rawValue.capitalized, systemImage: "waveform")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            
-            if !session.artistName.isEmpty {
-                Text(session.artistName)
-                    .font(.caption)
+                HStack(spacing: 12) {
+                    Label {
+                        Text(session.sessionDate, format: .dateTime.month().day().year())
+                    } icon: {
+                        Image(systemName: "calendar")
+                    }
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    
+                    if let studio = studio {
+                        Label(studio.name, systemImage: "building.2")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    
+                    Label(session.sessionType.rawValue.capitalized, systemImage: "waveform")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                
+                if !session.artistName.isEmpty {
+                    Text(session.artistName)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
             }
         }
+        .padding(.vertical, 8)
         .opacity(session.isArchived ? 0.6 : 1.0)
     }
 }
 
 struct SessionStatusBadge: View {
     let status: SessionStatus
-    
-    var body: some View {
-        Text(status.rawValue.capitalized)
-            .font(.caption2.bold())
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(statusColor.opacity(0.2))
-            .foregroundStyle(statusColor)
-            .cornerRadius(4)
-    }
     
     var statusColor: Color {
         switch status {
@@ -176,6 +191,17 @@ struct SessionStatusBadge: View {
         case .completed: return .gray
         case .cancelled: return .red
         }
+    }
+    
+    var body: some View {
+        Text(status.rawValue.capitalized)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(statusColor.gradient)
+            .clipShape(Capsule())
+            .shadow(color: statusColor.opacity(0.3), radius: 3, x: 0, y: 2)
     }
 }
 

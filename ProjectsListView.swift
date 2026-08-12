@@ -81,45 +81,64 @@ struct ProjectsListView: View {
 struct ProjectRowView: View {
     let project: Project
     
+    var statusColor: Color {
+        switch project.status {
+        case .active: return .green
+        case .onHold: return .orange
+        case .completed: return .blue
+        case .archived: return .gray
+        }
+    }
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(project.name)
-                .font(.headline)
+        HStack(spacing: 12) {
+            // Status indicator
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(statusColor.gradient)
+                .frame(width: 4, height: 48)
             
-            HStack {
-                if !project.artistName.isEmpty {
-                    Text(project.artistName)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(project.name)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    
+                    Spacer()
+                    
+                    // Status badge
+                    Text(project.status.rawValue.capitalized)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(statusColor.gradient)
+                        .clipShape(Capsule())
                 }
                 
-                Spacer()
+                HStack(spacing: 8) {
+                    if !project.artistName.isEmpty {
+                        Label(project.artistName, systemImage: "person.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
                 
-                StatusBadge(status: project.status)
-            }
-            
-            if !project.clientName.isEmpty && project.clientName != project.artistName {
-                Text("Client: \(project.clientName)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if !project.clientName.isEmpty && project.clientName != project.artistName {
+                    Label(project.clientName, systemImage: "building.2")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
             }
         }
+        .padding(.vertical, 8)
         .opacity(project.isArchived ? 0.6 : 1.0)
     }
 }
 
 struct StatusBadge: View {
     let status: ProjectStatus
-    
-    var body: some View {
-        Text(status.rawValue.capitalized)
-            .font(.caption2)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(statusColor.opacity(0.2))
-            .foregroundStyle(statusColor)
-            .cornerRadius(4)
-    }
     
     var statusColor: Color {
         switch status {
@@ -128,6 +147,17 @@ struct StatusBadge: View {
         case .completed: return .blue
         case .archived: return .gray
         }
+    }
+    
+    var body: some View {
+        Text(status.rawValue.capitalized)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(statusColor.gradient)
+            .clipShape(Capsule())
+            .shadow(color: statusColor.opacity(0.3), radius: 3, x: 0, y: 2)
     }
 }
 

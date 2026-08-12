@@ -45,20 +45,39 @@ struct DashboardView: View {
         studios.filter { !$0.isSystemStudio }
     }
     
+    var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 0..<12: return "Good morning"
+        case 12..<17: return "Good afternoon"
+        case 17..<22: return "Good evening"
+        default: return "Welcome back"
+        }
+    }
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // Header
+                // Header with gradient
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Studio Guru")
-                        .font(.largeTitle.bold())
-                    Text("Welcome back")
+                        .font(.system(.largeTitle, design: .rounded))
+                        .fontWeight(.bold)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.blue, .purple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                    
+                    Text(greeting)
                         .font(.title3)
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
-                .padding(.top)
+                .padding(.top, 24)
                 
                 // Quick Stats
                 HStack(spacing: 16) {
@@ -202,28 +221,43 @@ struct StatCard: View {
     let color: Color
     
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(color)
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(color.gradient)
+                    .frame(width: 56, height: 56)
+                    .shadow(color: color.opacity(0.3), radius: 8, x: 0, y: 4)
+                
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .fontWeight(.semibold)
+            }
             
-            Text(value)
-                .font(.title.bold())
-            
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+            VStack(spacing: 4) {
+                Text(value)
+                    .font(.system(.title, design: .rounded))
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
+                
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
         }
         .frame(maxWidth: .infinity)
-        .padding()
-        #if os(macOS)
-        .background(Color(nsColor: .controlBackgroundColor))
-        #else
-        .background(Color(.systemBackground))
-        #endif
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .padding(.vertical, 20)
+        .padding(.horizontal, 16)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+        }
     }
 }
 
@@ -237,27 +271,40 @@ struct QuickActionButton: View {
     
     var body: some View {
         Button(action: action) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.title3)
-                    .foregroundStyle(color)
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(color.gradient)
+                        .frame(width: 48, height: 48)
+                        .shadow(color: color.opacity(0.3), radius: 4, x: 0, y: 2)
+                    
+                    Image(systemName: icon)
+                        .font(.title3)
+                        .foregroundStyle(.white)
+                        .fontWeight(.semibold)
+                }
                 
                 Text(title)
                     .font(.headline)
+                    .foregroundStyle(.primary)
                 
                 Spacer()
                 
                 Image(systemName: "chevron.right")
-                    .font(.caption)
+                    .font(.subheadline)
                     .foregroundStyle(.tertiary)
+                    .fontWeight(.semibold)
             }
-            .padding()
-            #if os(macOS)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-            #else
-            .background(Color(.secondarySystemBackground))
-            #endif
-            .cornerRadius(8)
+            .padding(16)
+            .background {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+            }
         }
         .buttonStyle(.plain)
     }
@@ -273,53 +320,82 @@ struct TodaySessionRow: View {
         studios.first { $0.id == session.studioID }
     }
     
+    var statusColor: Color {
+        switch session.status {
+        case .planned: return .blue
+        case .active: return .green
+        case .completed: return .gray
+        case .cancelled: return .red
+        }
+    }
+    
     var body: some View {
-        HStack(spacing: 12) {
-            // Time indicator
+        HStack(spacing: 16) {
+            // Time indicator with gradient
             VStack(spacing: 4) {
                 if let startTime = session.startTime {
-                    Text(startTime, style: .time)
-                        .font(.headline)
+                    Text(startTime.formatted(date: .omitted, time: .shortened))
+                        .font(.system(.title3, design: .rounded))
+                        .fontWeight(.bold)
                 } else {
                     Text("All Day")
-                        .font(.caption)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
                 }
             }
-            .frame(width: 80)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
-            .background(Color.blue.opacity(0.2))
-            .cornerRadius(8)
+            .frame(width: 90)
+            .padding(.vertical, 12)
+            .background {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(statusColor.gradient.opacity(0.15))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(statusColor.opacity(0.3), lineWidth: 1.5)
+            }
             
             // Session info
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(session.name)
                     .font(.headline)
+                    .foregroundStyle(.primary)
                 
-                HStack {
+                HStack(spacing: 12) {
                     if let studio = studio {
                         Label(studio.name, systemImage: "building.2")
-                            .font(.caption)
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
                     
                     Label(session.sessionType.rawValue.capitalized, systemImage: "waveform")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.tertiary)
                 }
             }
             
             Spacer()
             
-            SessionStatusBadge(status: session.status)
+            // Status badge
+            Text(session.status.rawValue.capitalized)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(statusColor.gradient)
+                .clipShape(Capsule())
+                .shadow(color: statusColor.opacity(0.3), radius: 4, x: 0, y: 2)
         }
-        .padding()
-        #if os(macOS)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-        #else
-        .background(Color(.secondarySystemBackground))
-        #endif
-        .cornerRadius(8)
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+        }
     }
 }
 
@@ -333,38 +409,58 @@ struct UpcomingSessionRow: View {
         studios.first { $0.id == session.studioID }
     }
     
+    var statusColor: Color {
+        switch session.status {
+        case .planned: return .blue
+        case .active: return .green
+        case .completed: return .gray
+        case .cancelled: return .red
+        }
+    }
+    
     var body: some View {
-        HStack(spacing: 12) {
-            // Date indicator
+        HStack(spacing: 16) {
+            // Date indicator with modern styling
             VStack(spacing: 2) {
                 Text(session.sessionDate, format: .dateTime.day())
-                    .font(.title2.bold())
-                Text(session.sessionDate, format: .dateTime.month(.abbreviated))
+                    .font(.system(.title, design: .rounded))
+                    .fontWeight(.bold)
+                    .foregroundStyle(statusColor)
+                Text(session.sessionDate, format: .dateTime.month(.abbreviated).year())
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
             }
-            .frame(width: 60)
-            .padding(.vertical, 8)
-            .background(Color.gray.opacity(0.2))
-            .cornerRadius(8)
+            .frame(width: 70)
+            .padding(.vertical, 12)
+            .background {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(statusColor.gradient.opacity(0.1))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(statusColor.opacity(0.2), lineWidth: 1)
+            }
             
             // Session info
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(session.name)
                     .font(.headline)
+                    .foregroundStyle(.primary)
                 
                 if let studio = studio {
-                    Text(studio.name)
+                    Label(studio.name, systemImage: "building.2")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
                 
                 HStack(spacing: 12) {
                     if let startTime = session.startTime {
                         Label {
-                            Text(startTime, style: .time)
+                            Text(startTime.formatted(date: .omitted, time: .shortened))
                         } icon: {
-                            Image(systemName: "clock")
+                            Image(systemName: "clock.fill")
                         }
                         .font(.caption)
                         .foregroundStyle(.tertiary)
@@ -378,17 +474,21 @@ struct UpcomingSessionRow: View {
             
             Spacer()
             
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+            Image(systemName: "chevron.right.circle.fill")
+                .font(.title3)
+                .foregroundStyle(.tertiary.opacity(0.5))
+                .symbolRenderingMode(.hierarchical)
         }
-        .padding()
-        #if os(macOS)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.3))
-        #else
-        .background(Color(.secondarySystemBackground))
-        #endif
-        .cornerRadius(8)
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.03), radius: 8, x: 0, y: 2)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+        }
     }
 }
 

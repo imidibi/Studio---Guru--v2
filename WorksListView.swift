@@ -65,38 +65,68 @@ struct WorkRowView: View {
     let work: Work
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(work.title)
-                .font(.headline)
+        HStack(spacing: 12) {
+            // Music icon with gradient
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.pink, .purple],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 44, height: 44)
+                    .shadow(color: .purple.opacity(0.3), radius: 4, x: 0, y: 2)
+                
+                Image(systemName: "music.note")
+                    .font(.title3)
+                    .foregroundStyle(.white)
+                    .fontWeight(.semibold)
+            }
             
-            HStack {
-                if !work.artistName.isEmpty {
-                    Text(work.artistName)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(work.title)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                
+                HStack(spacing: 8) {
+                    if !work.artistName.isEmpty {
+                        Label(work.artistName, systemImage: "person.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    
+                    if !work.versionName.isEmpty {
+                        Text("•")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        Text(work.versionName)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
                 
-                if !work.versionName.isEmpty {
-                    Text("(\(work.versionName))")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-                
-                if let bpm = work.bpm {
-                    Text("\(Int(bpm)) BPM")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                
-                if !work.key.isEmpty {
-                    Text(work.key)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    if let bpm = work.bpm {
+                        Label("\(Int(bpm)) BPM", systemImage: "metronome")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    
+                    if !work.key.isEmpty {
+                        Label(work.key, systemImage: "music.quarternote.3")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
             }
+            
+            Spacer()
         }
+        .padding(.vertical, 4)
         .opacity(work.isArchived ? 0.6 : 1.0)
     }
 }
