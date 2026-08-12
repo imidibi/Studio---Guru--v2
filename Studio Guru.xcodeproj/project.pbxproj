@@ -28,6 +28,8 @@
 		5F94AFB4302BC88100D89BBD /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFB3302BC88100D89BBD /* SessionDetailView.swift */; };
 		5F94AFB6302BC8BD00D89BBD /* SessionAddViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFB5302BC8BD00D89BBD /* SessionAddViews.swift */; };
 		5F94AFB8302BC9EF00D89BBD /* UI_IMPLEMENTATION_COMPLETE.md in Resources */ = {isa = PBXBuildFile; fileRef = 5F94AFB7302BC9EF00D89BBD /* UI_IMPLEMENTATION_COMPLETE.md */; };
+		5F94AFBA302CFA8200D89BBD /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFB9302CFA8200D89BBD /* DashboardView.swift */; };
+		5F94AFBC302CFABC00D89BBD /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFBB302CFABC00D89BBD /* CalendarView.swift */; };
 		5FF331D92F9EF13200303C39 /* CanvasAnnotations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FF331D82F9EF13200303C39 /* CanvasAnnotations.swift */; };
 /* End PBXBuildFile section */
 
@@ -53,6 +55,8 @@
 		5F94AFB3302BC88100D89BBD /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
 		5F94AFB5302BC8BD00D89BBD /* SessionAddViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionAddViews.swift; sourceTree = "<group>"; };
 		5F94AFB7302BC9EF00D89BBD /* UI_IMPLEMENTATION_COMPLETE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = UI_IMPLEMENTATION_COMPLETE.md; sourceTree = "<group>"; };
+		5F94AFB9302CFA8200D89BBD /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		5F94AFBB302CFABC00D89BBD /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
 		5FF331D82F9EF13200303C39 /* CanvasAnnotations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasAnnotations.swift; sourceTree = "<group>"; };
 		5FFE5C962F37D70900EB00B9 /* Studio Guru.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Studio Guru.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -103,6 +107,8 @@
 				5F94AFB3302BC88100D89BBD /* SessionDetailView.swift */,
 				5F94AFB5302BC8BD00D89BBD /* SessionAddViews.swift */,
 				5F94AFB7302BC9EF00D89BBD /* UI_IMPLEMENTATION_COMPLETE.md */,
+				5F94AFB9302CFA8200D89BBD /* DashboardView.swift */,
+				5F94AFBB302CFABC00D89BBD /* CalendarView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -217,8 +223,10 @@
 				5F94AFB6302BC8BD00D89BBD /* SessionAddViews.swift in Sources */,
 				5FF331D92F9EF13200303C39 /* CanvasAnnotations.swift in Sources */,
 				5F847FB62FEC614700200571 /* BackupManager.swift in Sources */,
+				5F94AFBC302CFABC00D89BBD /* CalendarView.swift in Sources */,
 				5F94AFB4302BC88100D89BBD /* SessionDetailView.swift in Sources */,
 				5F94AFB2302BC85400D89BBD /* SessionCreationView.swift in Sources */,
+				5F94AFBA302CFA8200D89BBD /* DashboardView.swift in Sources */,
 				5F94AFAA302BC7EF00D89BBD /* ProjectEditView.swift in Sources */,
 				5F94AFAC302BC7FD00D89BBD /* WorksListView.swift in Sources */,
 				5F94AFA2302BC79000D89BBD /* PersonDetailView.swift in Sources */,

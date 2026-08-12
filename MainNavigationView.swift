@@ -11,54 +11,129 @@ struct MainNavigationView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var storeManager: StoreManager
     
-    @State private var selectedTab: NavigationTab = .studios
+    @State private var selectedTab: NavigationTab = .dashboard
     
     enum NavigationTab {
-        case studios
+        case dashboard
+        case calendar
         case sessions
-        case projects
+        case studios
         case people
+        case projects
         case works
     }
     
     var body: some View {
+        #if os(macOS)
+        // macOS: Sidebar navigation
+        NavigationSplitView {
+            List(selection: $selectedTab) {
+                Section("Overview") {
+                    NavigationLink(value: NavigationTab.dashboard) {
+                        Label("Dashboard", systemImage: "house.fill")
+                    }
+                    
+                    NavigationLink(value: NavigationTab.calendar) {
+                        Label("Calendar", systemImage: "calendar")
+                    }
+                }
+                
+                Section("Management") {
+                    NavigationLink(value: NavigationTab.sessions) {
+                        Label("Sessions", systemImage: "waveform")
+                    }
+                    
+                    NavigationLink(value: NavigationTab.studios) {
+                        Label("Studios", systemImage: "building.2")
+                    }
+                    
+                    NavigationLink(value: NavigationTab.people) {
+                        Label("People", systemImage: "person.3")
+                    }
+                }
+                
+                Section("Resources") {
+                    NavigationLink(value: NavigationTab.projects) {
+                        Label("Projects", systemImage: "folder")
+                    }
+                    
+                    NavigationLink(value: NavigationTab.works) {
+                        Label("Songs", systemImage: "music.note.list")
+                    }
+                }
+            }
+            .navigationTitle("Studio Guru")
+            .listStyle(.sidebar)
+        } detail: {
+            destinationView(for: selectedTab)
+        }
+        #else
+        // iOS: Tab bar navigation
         TabView(selection: $selectedTab) {
-            // Studios Tab (existing functionality)
-            StudioCanvasView()
-                .tabItem {
-                    Label("Studios", systemImage: "building.2")
-                }
-                .tag(NavigationTab.studios)
+            NavigationStack {
+                DashboardView()
+            }
+            .tabItem {
+                Label("Dashboard", systemImage: "house.fill")
+            }
+            .tag(NavigationTab.dashboard)
             
-            // Sessions Tab (new)
+            NavigationStack {
+                CalendarView()
+            }
+            .tabItem {
+                Label("Calendar", systemImage: "calendar")
+            }
+            .tag(NavigationTab.calendar)
+            
+            NavigationStack {
+                SessionsListView()
+            }
+            .tabItem {
+                Label("Sessions", systemImage: "waveform")
+            }
+            .tag(NavigationTab.sessions)
+            
+            NavigationStack {
+                StudioCanvasView()
+            }
+            .tabItem {
+                Label("Studios", systemImage: "building.2")
+            }
+            .tag(NavigationTab.studios)
+            
+            NavigationStack {
+                PeopleListView()
+            }
+            .tabItem {
+                Label("People", systemImage: "person.3")
+            }
+            .tag(NavigationTab.people)
+        }
+        #endif
+    }
+    
+    #if os(macOS)
+    @ViewBuilder
+    private func destinationView(for tab: NavigationTab) -> some View {
+        switch tab {
+        case .dashboard:
+            DashboardView()
+        case .calendar:
+            CalendarView()
+        case .sessions:
             SessionsListView()
-                .tabItem {
-                    Label("Sessions", systemImage: "calendar")
-                }
-                .tag(NavigationTab.sessions)
-            
-            // Projects Tab (new)
-            ProjectsListView()
-                .tabItem {
-                    Label("Projects", systemImage: "folder")
-                }
-                .tag(NavigationTab.projects)
-            
-            // People Tab (new)
+        case .studios:
+            StudioCanvasView()
+        case .people:
             PeopleListView()
-                .tabItem {
-                    Label("People", systemImage: "person.3")
-                }
-                .tag(NavigationTab.people)
-            
-            // Works/Songs Tab (new)
+        case .projects:
+            ProjectsListView()
+        case .works:
             WorksListView()
-                .tabItem {
-                    Label("Songs", systemImage: "music.note.list")
-                }
-                .tag(NavigationTab.works)
         }
     }
+    #endif
 }
 
 #Preview {
