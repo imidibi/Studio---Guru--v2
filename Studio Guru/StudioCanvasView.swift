@@ -210,26 +210,7 @@ struct StudioCanvasView: View {
     }
     
     private var mainContent: some View {
-        NavigationSplitView {
-            StudiosList(
-                studios: studiosSortedByName,
-                selectedStudioId: $selectedStudioId,
-                onDuplicate: { duplicateStudio(from: $0) },
-                onExport: { exportStudio($0) },
-                onRequestDelete: { studio in
-                    // Check if this is the last regular studio
-                    let regularStudios = studios.filter { !$0.isSystemStudio }
-                    if regularStudios.count <= 1 {
-                        isShowingCannotDeleteLastStudio = true
-                    } else {
-                        studioIdPendingDelete = studio.id
-                        isShowingDeleteStudioConfirm = true
-                    }
-                }
-            )
-        } detail: {
-            detail
-        }
+        studioCanvasContent
         .alert("New Studio", isPresented: $isShowingNewStudioPrompt) {
             TextField("Studio Name", text: $newStudioNameDraft)
             Button("Create") {
@@ -2684,6 +2665,105 @@ struct StudioCanvasView: View {
     private var currentStudio: Studio? {
         guard let id = selectedStudioId else { return studios.first }
         return studios.first(where: { $0.id == id })
+    }
+    
+    private var selectedStudio: Studio? {
+        currentStudio
+    }
+    
+    private var studioCanvasContent: some View {
+        detail
+            .safeAreaInset(edge: .top, spacing: 0) {
+                studioSelectorBar
+            }
+    }
+    
+    private var studioSelectorBar: some View {
+        HStack {
+            studioSelectorMenu
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial)
+    }
+    
+    @ViewBuilder
+    private var studioSelectorMenu: some View {
+        Menu {
+            ForEach(studiosSortedByName) { studio in
+                Button {
+                    selectedStudioId = studio.id
+                } label: {
+                    HStack {
+                        Text(studio.name)
+                        Spacer()
+                        if selectedStudioId == studio.id {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+            
+            Divider()
+            
+            Button {
+                isShowingNewStudioPrompt = true
+                newStudioNameDraft = ""
+            } label: {
+                Label("New Studio", systemImage: "plus.circle")
+            }
+        } label: {
+            HStack(spacing: 6) {
+                if let studio = selectedStudio {
+                    if studio.isSystemStudio {
+                        Image(systemName: "archivebox.fill")
+                    } else {
+                        Image(systemName: "building.2.fill")
+                    }
+                }
+                Text(selectedStudio?.name ?? "Select Studio")
+                    .fontWeight(.semibold)
+                Image(systemName: "chevron.down.circle.fill")
+                    .font(.caption)
+                    .symbolRenderingMode(.hierarchical)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var studioActionsMenu: some View {
+        if let studio = selectedStudio, !studio.isSystemStudio {
+            Menu {
+                Button {
+                    duplicateStudio(from: studio)
+                } label: {
+                    Label("Duplicate Studio", systemImage: "doc.on.doc")
+                }
+                
+                Button {
+                    exportStudio(studio)
+                } label: {
+                    Label("Export Studio", systemImage: "square.and.arrow.up")
+                }
+                
+                Divider()
+                
+                Button(role: .destructive) {
+                    let regularStudios = studios.filter { !$0.isSystemStudio }
+                    if regularStudios.count <= 1 {
+                        isShowingCannotDeleteLastStudio = true
+                    } else {
+                        studioIdPendingDelete = studio.id
+                        isShowingDeleteStudioConfirm = true
+                    }
+                } label: {
+                    Label("Delete Studio", systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+            }
+        }
     }
 
     private var studioPendingDelete: Studio? {
