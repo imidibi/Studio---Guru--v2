@@ -2691,15 +2691,38 @@ struct StudioCanvasView: View {
     @ViewBuilder
     private var studioSelectorMenu: some View {
         Menu {
-            ForEach(studiosSortedByName) { studio in
+            // Regular studios
+            ForEach(studiosSortedByName.filter { !$0.isSystemStudio }) { studio in
                 Button {
                     selectedStudioId = studio.id
                 } label: {
                     HStack {
+                        Image(systemName: "building.2")
                         Text(studio.name)
                         Spacer()
                         if selectedStudioId == studio.id {
                             Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+            
+            // System studios (Gear Locker)
+            let systemStudios = studiosSortedByName.filter { $0.isSystemStudio }
+            if !systemStudios.isEmpty {
+                Divider()
+                
+                ForEach(systemStudios) { studio in
+                    Button {
+                        selectedStudioId = studio.id
+                    } label: {
+                        HStack {
+                            Image(systemName: "archivebox.fill")
+                            Text(studio.name)
+                            Spacer()
+                            if selectedStudioId == studio.id {
+                                Image(systemName: "checkmark")
+                            }
                         }
                     }
                 }
