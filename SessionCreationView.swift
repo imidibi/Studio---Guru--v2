@@ -34,98 +34,172 @@ struct SessionCreationView: View {
     
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Basic Information") {
-                    TextField("Session Name", text: $name)
-                        #if os(iOS)
-                        .textInputAutocapitalization(.words)
-                        #endif
-                    
-                    if name.isEmpty {
-                        Text("e.g., \"Vocal Tracking\", \"Mix Session\", \"Band Rehearsal\"")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                
-                Section("Location & Type") {
-                    Picker("Studio", selection: $selectedStudioID) {
-                        Text("Select Studio").tag(nil as UUID?)
-                        ForEach(regularStudios) { studio in
-                            Text(studio.name).tag(studio.id as UUID?)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Basic Information
+                    GroupBox("Basic Information") {
+                        VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Session Name")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("e.g., Vocal Tracking, Mix Session", text: $name)
+                                    .textFieldStyle(.roundedBorder)
+                                    #if os(iOS)
+                                    .textInputAutocapitalization(.words)
+                                    #endif
+                            }
                         }
                     }
                     
-                    Picker("Session Type", selection: $sessionType) {
-                        ForEach(SessionType.allCases, id: \.self) { type in
-                            Label(type.rawValue.capitalized, systemImage: iconForType(type))
-                                .tag(type)
+                    // Location & Type
+                    GroupBox("Location & Type") {
+                        VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Studio")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Picker("Studio", selection: $selectedStudioID) {
+                                    Text("Select Studio").tag(nil as UUID?)
+                                    ForEach(regularStudios) { studio in
+                                        Text(studio.name).tag(studio.id as UUID?)
+                                    }
+                                }
+                                .labelsHidden()
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Session Type")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Picker("Session Type", selection: $sessionType) {
+                                    ForEach(SessionType.allCases, id: \.self) { type in
+                                        Label(type.rawValue.capitalized, systemImage: iconForType(type))
+                                            .tag(type)
+                                    }
+                                }
+                                .labelsHidden()
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Status")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Picker("Status", selection: $status) {
+                                    ForEach(SessionStatus.allCases, id: \.self) { status in
+                                        Text(status.rawValue.capitalized).tag(status)
+                                    }
+                                }
+                                .labelsHidden()
+                            }
                         }
                     }
                     
-                    Picker("Status", selection: $status) {
-                        ForEach(SessionStatus.allCases, id: \.self) { status in
-                            Text(status.rawValue.capitalized).tag(status)
-                        }
-                    }
-                }
-                
-                Section("Project (Optional)") {
-                    Picker("Project", selection: $selectedProjectID) {
-                        Text("None").tag(nil as UUID?)
-                        ForEach(projects.filter { !$0.isArchived && $0.status == .active }) { project in
-                            VStack(alignment: .leading) {
-                                Text(project.name)
-                                if !project.artistName.isEmpty {
-                                    Text(project.artistName)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                    // Project
+                    GroupBox("Project (Optional)") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Link to Project")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Picker("Project", selection: $selectedProjectID) {
+                                Text("None").tag(nil as UUID?)
+                                ForEach(projects.filter { !$0.isArchived && $0.status == .active }) { project in
+                                    Text(project.name).tag(project.id as UUID?)
                                 }
                             }
-                            .tag(project.id as UUID?)
+                            .labelsHidden()
+                        }
+                    }
+                    
+                    // Date & Time
+                    GroupBox("Date & Time") {
+                        VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Session Date")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                DatePicker("Session Date", selection: $sessionDate, displayedComponents: .date)
+                                    .labelsHidden()
+                                    .datePickerStyle(.graphical)
+                            }
+                            
+                            Divider()
+                            
+                            Toggle("Include Start Time", isOn: $hasStartTime)
+                            if hasStartTime {
+                                DatePicker("Start", selection: $startTime, displayedComponents: .hourAndMinute)
+                                    .labelsHidden()
+                            }
+                            
+                            Toggle("Include End Time", isOn: $hasEndTime)
+                            if hasEndTime {
+                                DatePicker("End", selection: $endTime, displayedComponents: .hourAndMinute)
+                                    .labelsHidden()
+                            }
+                        }
+                    }
+                    
+                    // Client Information
+                    GroupBox("Client Information") {
+                        VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Artist Name")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("Artist or band name", text: $artistName)
+                                    .textFieldStyle(.roundedBorder)
+                                    #if os(iOS)
+                                    .textInputAutocapitalization(.words)
+                                    #endif
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Client Name")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("Label, producer, or client", text: $clientName)
+                                    .textFieldStyle(.roundedBorder)
+                                    #if os(iOS)
+                                    .textInputAutocapitalization(.words)
+                                    #endif
+                            }
+                        }
+                    }
+                    
+                    // Studio Configuration
+                    GroupBox("Studio Configuration") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Toggle("Capture Studio Snapshot", isOn: $createSnapshot)
+                            
+                            if createSnapshot {
+                                Text("Saves the current studio configuration (devices and connections) with this session for historical reference.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    
+                    // Notes
+                    GroupBox("Notes") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Session Notes")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            TextEditor(text: $notes)
+                                .frame(minHeight: 100)
+                                .overlay(alignment: .topLeading) {
+                                    if notes.isEmpty {
+                                        Text("Add any notes about this session...")
+                                            .foregroundStyle(.tertiary)
+                                            .padding(.top, 8)
+                                            .padding(.leading, 4)
+                                            .allowsHitTesting(false)
+                                    }
+                                }
                         }
                     }
                 }
-                
-                Section("Date & Time") {
-                    DatePicker("Session Date", selection: $sessionDate, displayedComponents: .date)
-                    
-                    Toggle("Start Time", isOn: $hasStartTime)
-                    if hasStartTime {
-                        DatePicker("Start", selection: $startTime, displayedComponents: .hourAndMinute)
-                    }
-                    
-                    Toggle("End Time", isOn: $hasEndTime)
-                    if hasEndTime {
-                        DatePicker("End", selection: $endTime, displayedComponents: .hourAndMinute)
-                    }
-                }
-                
-                Section("Client Information") {
-                    TextField("Artist Name", text: $artistName)
-                        #if os(iOS)
-                        .textInputAutocapitalization(.words)
-                        #endif
-                    TextField("Client Name", text: $clientName)
-                        #if os(iOS)
-                        .textInputAutocapitalization(.words)
-                        #endif
-                }
-                
-                Section("Setup") {
-                    Toggle("Capture Studio Setup Snapshot", isOn: $createSnapshot)
-                    
-                    if createSnapshot {
-                        Text("This will save the current studio configuration for this session")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                
-                Section("Notes") {
-                    TextEditor(text: $notes)
-                        .frame(minHeight: 100)
-                }
+                .padding()
             }
             .navigationTitle("New Session")
             #if os(iOS)
