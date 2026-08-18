@@ -153,4 +153,116 @@ enum StudioSeed {
             print("❌ Failed to delete duplicate lockers: \(error)")
         }
     }
+    
+    /// Seed default instruments and skills if none exist
+    static func ensureDefaultInstrumentsSkillsExist(modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<InstrumentSkill>()
+        guard let existing = try? modelContext.fetch(descriptor), existing.isEmpty else {
+            return
+        }
+        
+        print("🎸 Seeding default instruments and skills")
+        
+        var sortOrder = 0
+        
+        // Instruments - Strings
+        let stringInstruments = [
+            "Guitar", "Bass Guitar", "Electric Guitar", "Acoustic Guitar",
+            "Violin", "Viola", "Cello", "Double Bass", "Harp", "Ukulele", "Banjo", "Mandolin"
+        ]
+        for name in stringInstruments {
+            let skill = InstrumentSkill(name: name, category: "Instrument", sortOrder: sortOrder)
+            modelContext.insert(skill)
+            sortOrder += 1
+        }
+        
+        // Instruments - Keys
+        let keyInstruments = [
+            "Piano", "Keyboard", "Synthesizer", "Organ", "Rhodes", "Wurlitzer", "Accordion"
+        ]
+        for name in keyInstruments {
+            let skill = InstrumentSkill(name: name, category: "Instrument", sortOrder: sortOrder)
+            modelContext.insert(skill)
+            sortOrder += 1
+        }
+        
+        // Instruments - Brass
+        let brassInstruments = [
+            "Trumpet", "Trombone", "French Horn", "Tuba", "Saxophone", "Clarinet", "Flute", "Oboe"
+        ]
+        for name in brassInstruments {
+            let skill = InstrumentSkill(name: name, category: "Instrument", sortOrder: sortOrder)
+            modelContext.insert(skill)
+            sortOrder += 1
+        }
+        
+        // Instruments - Percussion
+        let percussionInstruments = [
+            "Drums", "Percussion", "Congas", "Bongos", "Timpani", "Vibraphone", "Marimba"
+        ]
+        for name in percussionInstruments {
+            let skill = InstrumentSkill(name: name, category: "Instrument", sortOrder: sortOrder)
+            modelContext.insert(skill)
+            sortOrder += 1
+        }
+        
+        // Instruments - Vocals
+        let vocals = [
+            "Vocals", "Lead Vocals", "Background Vocals", "Choir"
+        ]
+        for name in vocals {
+            let skill = InstrumentSkill(name: name, category: "Instrument", sortOrder: sortOrder)
+            modelContext.insert(skill)
+            sortOrder += 1
+        }
+        
+        // Production Skills
+        let productionSkills = [
+            "Producer", "Executive Producer", "Co-Producer", "Music Producer",
+            "Beat Maker", "Programmer", "Sound Designer"
+        ]
+        for name in productionSkills {
+            let skill = InstrumentSkill(name: name, category: "Production", sortOrder: sortOrder)
+            modelContext.insert(skill)
+            sortOrder += 1
+        }
+        
+        // Engineering Skills
+        let engineeringSkills = [
+            "Recording Engineer", "Mix Engineer", "Mastering Engineer",
+            "Assistant Engineer", "Live Sound Engineer", "Broadcast Engineer"
+        ]
+        for name in engineeringSkills {
+            let skill = InstrumentSkill(name: name, category: "Engineering", sortOrder: sortOrder)
+            modelContext.insert(skill)
+            sortOrder += 1
+        }
+        
+        // Writing Skills
+        let writingSkills = [
+            "Songwriter", "Composer", "Lyricist", "Arranger", "Orchestrator"
+        ]
+        for name in writingSkills {
+            let skill = InstrumentSkill(name: name, category: "Writing", sortOrder: sortOrder)
+            modelContext.insert(skill)
+            sortOrder += 1
+        }
+        
+        // Other Skills
+        let otherSkills = [
+            "Artist", "Session Musician", "Band Member", "Conductor", "Music Director"
+        ]
+        for name in otherSkills {
+            let skill = InstrumentSkill(name: name, category: "Other", sortOrder: sortOrder)
+            modelContext.insert(skill)
+            sortOrder += 1
+        }
+        
+        do {
+            try modelContext.save()
+            print("✅ Successfully seeded \(sortOrder) instruments and skills")
+        } catch {
+            print("❌ Failed to seed instruments and skills: \(error)")
+        }
+    }
 }   

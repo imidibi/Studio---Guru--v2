@@ -38,6 +38,7 @@ struct Studio_GuruApp: App {
             EndpointNameModel.self,
             // Session management models (v2.0)
             Person.self,
+            InstrumentSkill.self,
             Project.self,
             Work.self,
             Session.self,
@@ -206,6 +207,9 @@ struct Studio_GuruApp: App {
                 .onAppear {
                     // Start monitoring CloudKit sync events
                     setupCloudKitMonitoring()
+                    
+                    // Seed default instruments and skills if needed
+                    StudioSeed.ensureDefaultInstrumentsSkillsExist(modelContext: sharedModelContainer.mainContext)
                 }
                 .onChange(of: storeManager.isPro) { oldValue, newValue in
                     // When Pro status becomes true, ensure Gear Locker exists

@@ -1088,6 +1088,33 @@ final class Person {
     }
 }
 
+// MARK: - InstrumentSkill
+
+@Model
+final class InstrumentSkill {
+    var id: UUID = UUID()
+    var name: String = ""
+    var category: String = "" // "Instrument", "Production", "Engineering", "Writing", etc.
+    var sortOrder: Int = 0
+    
+    var isArchived: Bool = false
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
+    
+    init(name: String, category: String = "", sortOrder: Int = 0) {
+        self.id = UUID()
+        self.name = name
+        self.category = category
+        self.sortOrder = sortOrder
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+    }
+    
+    func markAsModified() {
+        self.modifiedAt = Date()
+    }
+}
+
 // MARK: - Project
 
 @Model

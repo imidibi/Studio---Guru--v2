@@ -174,67 +174,162 @@ struct WorkEditView: View {
     
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Basic Information") {
-                    TextField("Title", text: $title)
-                    TextField("Version", text: $versionName)
-                        #if os(iOS)
-                        .textInputAutocapitalization(.words)
-                        #endif
-                    TextField("Artist", text: $artistName)
-                        #if os(iOS)
-                        .textInputAutocapitalization(.words)
-                        #endif
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Basic Information
+                    GroupBox("Basic Information") {
+                        VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Title")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("Enter song title", text: $title)
+                                    .textFieldStyle(.roundedBorder)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Version")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("e.g., Radio Edit, Acoustic", text: $versionName)
+                                    .textFieldStyle(.roundedBorder)
+                                    #if os(iOS)
+                                    .textInputAutocapitalization(.words)
+                                    #endif
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Artist")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("Artist name", text: $artistName)
+                                    .textFieldStyle(.roundedBorder)
+                                    #if os(iOS)
+                                    .textInputAutocapitalization(.words)
+                                    #endif
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Project")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Picker("Project", selection: $selectedProjectID) {
+                                    Text("None").tag(nil as UUID?)
+                                    ForEach(projects.filter { !$0.isArchived }) { project in
+                                        Text(project.name).tag(project.id as UUID?)
+                                    }
+                                }
+                                .labelsHidden()
+                            }
+                        }
+                    }
                     
-                    Picker("Project", selection: $selectedProjectID) {
-                        Text("None").tag(nil as UUID?)
-                        ForEach(projects.filter { !$0.isArchived }) { project in
-                            Text(project.name).tag(project.id as UUID?)
+                    // Musical Details
+                    GroupBox("Musical Details") {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Toggle("Include BPM", isOn: $hasBPM)
+                            
+                            if hasBPM {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("BPM")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    HStack {
+                                        TextField("BPM", value: Binding(
+                                            get: { bpm ?? 120 },
+                                            set: { bpm = $0 }
+                                        ), format: .number)
+                                        .textFieldStyle(.roundedBorder)
+                                        #if os(iOS)
+                                        .keyboardType(.decimalPad)
+                                        #endif
+                                        
+                                        Stepper("", value: Binding(
+                                            get: { bpm ?? 120 },
+                                            set: { bpm = $0 }
+                                        ), in: 20...300, step: 1)
+                                    }
+                                }
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Key")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("e.g., C Major, A Minor", text: $key)
+                                    .textFieldStyle(.roundedBorder)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Time Signature")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("e.g., 4/4, 3/4", text: $timeSignature)
+                                    .textFieldStyle(.roundedBorder)
+                                    #if os(iOS)
+                                    .textInputAutocapitalization(.never)
+                                    #endif
+                            }
+                        }
+                    }
+                    
+                    // Metadata
+                    GroupBox("Metadata") {
+                        VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("ISRC")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("International Standard Recording Code", text: $isrc)
+                                    .textFieldStyle(.roundedBorder)
+                                    #if os(iOS)
+                                    .textInputAutocapitalization(.characters)
+                                    #endif
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("ISWC")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("International Standard Work Code", text: $iswc)
+                                    .textFieldStyle(.roundedBorder)
+                                    #if os(iOS)
+                                    .textInputAutocapitalization(.characters)
+                                    #endif
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("PRO Work ID")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("Performance Rights Organization Work ID", text: $proWorkID)
+                                    .textFieldStyle(.roundedBorder)
+                            }
+                        }
+                    }
+                    
+                    // Notes
+                    GroupBox("Notes") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Additional notes")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            ZStack(alignment: .topLeading) {
+                                if notes.isEmpty {
+                                    Text("Add any additional notes about this song...")
+                                        .foregroundStyle(.secondary)
+                                        .padding(8)
+                                }
+                                TextEditor(text: $notes)
+                                    .frame(minHeight: 100)
+                                    .scrollContentBackground(.hidden)
+                            }
+                            .background(Color(nsColor: .controlBackgroundColor))
+                            .cornerRadius(6)
                         }
                     }
                 }
-                
-                Section("Musical Details") {
-                    Toggle("BPM", isOn: $hasBPM)
-                    if hasBPM {
-                        HStack {
-                            TextField("BPM", value: Binding(
-                                get: { bpm ?? 120 },
-                                set: { bpm = $0 }
-                            ), format: .number)
-                            #if os(iOS)
-                            .keyboardType(.decimalPad)
-                            #endif
-                            Stepper("", value: Binding(
-                                get: { bpm ?? 120 },
-                                set: { bpm = $0 }
-                            ), in: 20...300, step: 1)
-                        }
-                    }
-                    
-                    TextField("Key", text: $key)
-                    TextField("Time Signature", text: $timeSignature)
-                        #if os(iOS)
-                        .textInputAutocapitalization(.never)
-                        #endif
-                }
-                
-                Section("Metadata") {
-                    TextField("ISRC", text: $isrc)
-                        #if os(iOS)
-                        .textInputAutocapitalization(.characters)
-                        #endif
-                    TextField("ISWC", text: $iswc)
-                        #if os(iOS)
-                        .textInputAutocapitalization(.characters)
-                        #endif
-                    TextField("PRO Work ID", text: $proWorkID)
-                }
-                
-                Section("Notes") {
-                    TextEditor(text: $notes)
-                        .frame(minHeight: 100)
-                }
+                .padding()
             }
             .navigationTitle(isEditing ? "Edit Song" : "New Song")
             #if os(iOS)

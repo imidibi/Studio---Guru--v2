@@ -28,47 +28,116 @@ struct ProjectEditView: View {
     
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Basic Information") {
-                    TextField("Project Name", text: $name)
-                    TextField("Artist Name", text: $artistName)
-                    TextField("Client Name", text: $clientName)
-                    
-                    Picker("Type", selection: $projectType) {
-                        ForEach(ProjectType.allCases, id: \.self) { type in
-                            Text(type.rawValue.capitalized).tag(type)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Basic Information
+                    GroupBox("Basic Information") {
+                        VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Project Name")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("Enter project name", text: $name)
+                                    .textFieldStyle(.roundedBorder)
+                                    #if os(iOS)
+                                    .textInputAutocapitalization(.words)
+                                    #endif
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Artist Name")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("Artist or band name", text: $artistName)
+                                    .textFieldStyle(.roundedBorder)
+                                    #if os(iOS)
+                                    .textInputAutocapitalization(.words)
+                                    #endif
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Client Name")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                TextField("Label, producer, or client", text: $clientName)
+                                    .textFieldStyle(.roundedBorder)
+                                    #if os(iOS)
+                                    .textInputAutocapitalization(.words)
+                                    #endif
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Project Type")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Picker("Type", selection: $projectType) {
+                                    ForEach(ProjectType.allCases, id: \.self) { type in
+                                        Text(type.rawValue.capitalized).tag(type)
+                                    }
+                                }
+                                .labelsHidden()
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Status")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Picker("Status", selection: $status) {
+                                    ForEach(ProjectStatus.allCases, id: \.self) { status in
+                                        Text(status.rawValue.capitalized).tag(status)
+                                    }
+                                }
+                                .labelsHidden()
+                            }
                         }
                     }
                     
-                    Picker("Status", selection: $status) {
-                        ForEach(ProjectStatus.allCases, id: \.self) { status in
-                            Text(status.rawValue.capitalized).tag(status)
+                    // Timeline
+                    GroupBox("Timeline") {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Toggle("Include Start Date", isOn: $hasStartDate)
+                            if hasStartDate {
+                                DatePicker("Start Date", selection: Binding(
+                                    get: { startDate ?? Date() },
+                                    set: { startDate = $0 }
+                                ), displayedComponents: .date)
+                                .labelsHidden()
+                                .datePickerStyle(.graphical)
+                            }
+                            
+                            Toggle("Include End Date", isOn: $hasEndDate)
+                            if hasEndDate {
+                                DatePicker("End Date", selection: Binding(
+                                    get: { endDate ?? Date() },
+                                    set: { endDate = $0 }
+                                ), displayedComponents: .date)
+                                .labelsHidden()
+                                .datePickerStyle(.graphical)
+                            }
+                        }
+                    }
+                    
+                    // Notes
+                    GroupBox("Notes") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Project Notes")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            TextEditor(text: $notes)
+                                .frame(minHeight: 100)
+                                .overlay(alignment: .topLeading) {
+                                    if notes.isEmpty {
+                                        Text("Add any notes about this project...")
+                                            .foregroundStyle(.tertiary)
+                                            .padding(.top, 8)
+                                            .padding(.leading, 4)
+                                            .allowsHitTesting(false)
+                                    }
+                                }
                         }
                     }
                 }
-                
-                Section("Timeline") {
-                    Toggle("Start Date", isOn: $hasStartDate)
-                    if hasStartDate {
-                        DatePicker("Start", selection: Binding(
-                            get: { startDate ?? Date() },
-                            set: { startDate = $0 }
-                        ), displayedComponents: .date)
-                    }
-                    
-                    Toggle("End Date", isOn: $hasEndDate)
-                    if hasEndDate {
-                        DatePicker("End", selection: Binding(
-                            get: { endDate ?? Date() },
-                            set: { endDate = $0 }
-                        ), displayedComponents: .date)
-                    }
-                }
-                
-                Section("Notes") {
-                    TextEditor(text: $notes)
-                        .frame(minHeight: 100)
-                }
+                .padding()
             }
             .navigationTitle(isEditing ? "Edit Project" : "New Project")
             #if os(iOS)

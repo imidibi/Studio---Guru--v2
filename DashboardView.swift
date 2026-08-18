@@ -15,7 +15,6 @@ struct DashboardView: View {
     
     @State private var showingNewSession = false
     @State private var showingNewPerson = false
-    @State private var showingSettings = false
     
     var todaySessions: [Session] {
         let calendar = Calendar.current
@@ -165,37 +164,6 @@ struct DashboardView: View {
                     }
                 }
                 .padding(.horizontal)
-                
-                // Settings
-                GroupBox {
-                    Button {
-                        showingSettings = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "gear")
-                                .font(.title3)
-                                .foregroundStyle(.secondary)
-                            
-                            Text("Settings")
-                                .font(.headline)
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .padding()
-                        #if os(macOS)
-                        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-                        #else
-                        .background(Color(.secondarySystemBackground))
-                        #endif
-                        .cornerRadius(8)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal)
                 .padding(.bottom)
             }
         }
@@ -205,9 +173,6 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $showingNewPerson) {
             PersonEditView(person: nil)
-        }
-        .sheet(isPresented: $showingSettings) {
-            SettingsView()
         }
     }
 }

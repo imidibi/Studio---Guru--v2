@@ -21,6 +21,8 @@ struct MainNavigationView: View {
         case people
         case projects
         case works
+        case instrumentsSkills
+        case settings
     }
     
     var body: some View {
@@ -59,6 +61,16 @@ struct MainNavigationView: View {
                     
                     NavigationLink(value: NavigationTab.works) {
                         Label("Songs", systemImage: "music.note.list")
+                    }
+                    
+                    NavigationLink(value: NavigationTab.instrumentsSkills) {
+                        Label("Instruments & Skills", systemImage: "guitars")
+                    }
+                }
+                
+                Section("Configuration") {
+                    NavigationLink(value: NavigationTab.settings) {
+                        Label("Settings", systemImage: "gear")
                     }
                 }
             }
@@ -144,6 +156,14 @@ struct MainNavigationView: View {
         case .works:
             NavigationStack {
                 WorksListView()
+            }
+        case .instrumentsSkills:
+            NavigationStack {
+                InstrumentsSkillsListView()
+            }
+        case .settings:
+            NavigationStack {
+                SettingsView()
             }
         }
     }

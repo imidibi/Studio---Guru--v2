@@ -94,9 +94,9 @@ struct PersonDetailView: View {
                     }
                 }
                 
-                // Instruments
+                // Instruments & Skills
                 if !person.instruments.isEmpty {
-                    GroupBox("Instruments") {
+                    GroupBox("Instruments & Skills") {
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach(person.instruments, id: \.self) { instrument in
                                 Label(instrument, systemImage: "music.note")
