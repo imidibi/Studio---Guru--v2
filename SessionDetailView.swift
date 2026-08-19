@@ -589,7 +589,7 @@ struct SessionCanvasEditor: View {
     
     var body: some View {
         NavigationStack {
-            StudioCanvasView()
+            StudioCanvasView(initialStudioId: studio.id)
                 .navigationTitle("Session: \(session.name)")
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -598,10 +598,6 @@ struct SessionCanvasEditor: View {
                         }
                     }
                 }
-        }
-        .onAppear {
-            // TODO: Set the selected studio to our session studio
-            // This requires modifying StudioCanvasView to accept an initial selection
         }
     }
 }

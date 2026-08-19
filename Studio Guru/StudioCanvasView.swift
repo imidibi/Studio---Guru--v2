@@ -49,7 +49,14 @@ struct StudioCanvasView: View {
     @EnvironmentObject var storeManager: StoreManager
     @EnvironmentObject var cloudKitSync: CloudKitSyncManager
 
+    // Optional initial studio selection (for session canvases)
+    let initialStudioId: UUID?
+    
     @State private var selectedStudioId: UUID?
+    
+    init(initialStudioId: UUID? = nil) {
+        self.initialStudioId = initialStudioId
+    }
 
     // Paywall
     @State private var isShowingPaywall: Bool = false
@@ -494,17 +501,22 @@ struct StudioCanvasView: View {
             #endif
             
             if selectedStudioId == nil {
-                // Don't auto-select Gear Locker if it's the only studio
-                // This ensures new users see the "Create Studio" prompt
-                let regularStudios = studios.filter { !$0.isSystemStudio }
-                if !regularStudios.isEmpty {
-                    selectedStudioId = regularStudios.first?.id
-                } else if studios.count > 1 {
-                    // Only select Gear Locker if there are other studios too
-                    selectedStudioId = studios.first?.id
+                // Check if we have an initial studio to select (e.g., from session canvas)
+                if let initialId = initialStudioId {
+                    selectedStudioId = initialId
+                } else {
+                    // Don't auto-select Gear Locker if it's the only studio
+                    // This ensures new users see the "Create Studio" prompt
+                    let regularStudios = studios.filter { !$0.isSystemStudio }
+                    if !regularStudios.isEmpty {
+                        selectedStudioId = regularStudios.first?.id
+                    } else if studios.count > 1 {
+                        // Only select Gear Locker if there are other studios too
+                        selectedStudioId = studios.first?.id
+                    }
+                    // If only Gear Locker exists (or no studios), leave selectedStudioId nil
+                    // This will show the "Create Studio" dialog
                 }
-                // If only Gear Locker exists (or no studios), leave selectedStudioId nil
-                // This will show the "Create Studio" dialog
             }
 
             // Defer state-modifying operations to avoid "Modifying state during view update" warning
