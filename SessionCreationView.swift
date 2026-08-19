@@ -249,18 +249,17 @@ struct SessionCreationView: View {
         
         modelContext.insert(session)
         
-        // Create snapshot if requested
-        if createSnapshot {
-            if let studio = studios.first(where: { $0.id == studioID }) {
-                do {
-                    _ = try SessionMigrationHelper.createSnapshotFromStudio(
-                        session: session,
-                        studio: studio,
-                        modelContext: modelContext
-                    )
-                } catch {
-                    print("Error creating snapshot: \(error)")
-                }
+        // Create snapshot from studio template
+        if let studio = studios.first(where: { $0.id == studioID }) {
+            do {
+                try SessionSnapshotHelper.createOrUpdateSnapshot(
+                    for: session,
+                    from: studio,
+                    modelContext: modelContext
+                )
+                print("✅ Created session canvas from studio: \(studio.name)")
+            } catch {
+                print("❌ Error creating snapshot: \(error)")
             }
         }
         

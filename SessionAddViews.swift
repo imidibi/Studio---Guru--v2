@@ -227,6 +227,7 @@ struct SessionEditView: View {
     
     @State private var name = ""
     @State private var selectedStudioID: UUID = UUID()
+    @State private var previousStudioID: UUID = UUID()  // Track studio changes
     @State private var selectedProjectID: UUID?
     @State private var sessionDate = Date()
     @State private var sessionType: SessionType = .tracking
@@ -417,6 +418,7 @@ struct SessionEditView: View {
     private func loadSessionData() {
         name = session.name
         selectedStudioID = session.studioID
+        previousStudioID = session.studioID  // Track original studio
         selectedProjectID = session.projectID
         sessionDate = session.sessionDate
         sessionType = session.sessionType
@@ -431,6 +433,9 @@ struct SessionEditView: View {
     }
     
     private func saveSession() {
+        // Check if studio has changed
+        let studioChanged = selectedStudioID != previousStudioID
+        
         session.name = name
         session.studioID = selectedStudioID
         session.projectID = selectedProjectID
@@ -443,6 +448,20 @@ struct SessionEditView: View {
         session.endTime = hasEndTime ? endTime : nil
         session.notes = notes
         session.markAsModified()
+        
+        // Create or update snapshot if studio was assigned or changed
+        if studioChanged, let studio = studios.first(where: { $0.id == selectedStudioID }) {
+            do {
+                try SessionSnapshotHelper.createOrUpdateSnapshot(
+                    for: session,
+                    from: studio,
+                    modelContext: modelContext
+                )
+                print("✅ Created/updated session canvas from studio: \(studio.name)")
+            } catch {
+                print("❌ Failed to create snapshot: \(error)")
+            }
+        }
         
         dismiss()
     }

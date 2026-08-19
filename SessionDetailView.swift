@@ -472,27 +472,200 @@ struct SessionWorkRow: View {
 // MARK: - Setup Tab
 
 struct SessionSetupTab: View {
+    @Environment(\.modelContext) private var modelContext
     let session: Session
+    
+    @State private var showingCanvas = false
+    
+    var snapshot: SessionConfigurationSnapshot? {
+        session.configurationSnapshot
+    }
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                if session.configurationSnapshot != nil {
-                    Text("Studio setup snapshot captured")
-                        .font(.headline)
-                    Text("The exact configuration used during this session has been preserved")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+            VStack(alignment: .leading, spacing: 20) {
+                if let snapshot = snapshot {
+                    // Canvas preview/summary
+                    GroupBox("Session Canvas") {
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Studio Configuration")
+                                        .font(.headline)
+                                    Text("Captured from studio setup")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Button {
+                                    showingCanvas = true
+                                } label: {
+                                    Label("View Canvas", systemImage: "square.grid.3x3")
+                                }
+                                .buttonStyle(.borderedProminent)
+                            }
+                            
+                            Divider()
+                            
+                            // Summary stats
+                            HStack(spacing: 24) {
+                                StatItem(
+                                    icon: "square.stack.3d.up",
+                                    label: "Devices",
+                                    value: "\(snapshot.devices?.count ?? 0)"
+                                )
+                                
+                                StatItem(
+                                    icon: "cable.connector",
+                                    label: "Connections",
+                                    value: "\(snapshot.connections?.count ?? 0)"
+                                )
+                                
+                                StatItem(
+                                    icon: "calendar",
+                                    label: "Captured",
+                                    value: formatDate(snapshot.createdAt)
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Device list
+                    if let devices = snapshot.devices, !devices.isEmpty {
+                        GroupBox("Devices in Setup (\(devices.count))") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(devices.prefix(10)) { device in
+                                    HStack {
+                                        Image(systemName: iconForOwnership(device.ownershipType))
+                                            .foregroundStyle(colorForOwnership(device.ownershipType))
+                                            .frame(width: 24)
+                                        
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(device.nickname.isEmpty ? device.model : device.nickname)
+                                                .font(.subheadline)
+                                            Text(device.manufacturer)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        if device.ownershipType == .artistProvided && !device.ownerName.isEmpty {
+                                            Text(device.ownerName)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .padding(.vertical, 4)
+                                }
+                                
+                                if devices.count > 10 {
+                                    Text("+ \(devices.count - 10) more devices")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
                 } else {
                     ContentUnavailableView(
                         "No Setup Snapshot",
                         systemImage: "square.grid.3x3",
-                        description: Text("The studio setup for this session was not captured")
+                        description: Text("Edit this session and assign a studio to create a setup snapshot")
                     )
                 }
             }
             .padding()
+        }
+        .sheet(isPresented: $showingCanvas) {
+            if let snapshot = snapshot {
+                SessionCanvasPlaceholder(session: session, snapshot: snapshot)
+            }
+        }
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+    
+    private func iconForOwnership(_ ownership: GearOwnership) -> String {
+        switch ownership {
+        case .studioOwned: return "building.2"
+        case .gearLocker: return "archivebox"
+        case .artistProvided: return "person"
+        case .rental: return "dollarsign.circle"
+        }
+    }
+    
+    private func colorForOwnership(_ ownership: GearOwnership) -> Color {
+        switch ownership {
+        case .studioOwned: return .blue
+        case .gearLocker: return .purple
+        case .artistProvided: return .orange
+        case .rental: return .green
+        }
+    }
+}
+
+// Helper view for stats
+struct StatItem: View {
+    let icon: String
+    let label: String
+    let value: String
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.title3.bold())
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// Placeholder for full canvas view (to be implemented)
+struct SessionCanvasPlaceholder: View {
+    @Environment(\.dismiss) private var dismiss
+    let session: Session
+    let snapshot: SessionConfigurationSnapshot
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    Text("Session Canvas")
+                        .font(.title.bold())
+                    
+                    Text("Full canvas editor coming soon")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    
+                    Text("This will show the full studio canvas with all devices and connections for this session.")
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.tertiary)
+                        .padding()
+                }
+                .padding()
+            }
+            .navigationTitle("Session Canvas")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
         }
     }
 }
