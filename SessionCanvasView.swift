@@ -254,16 +254,81 @@ struct ConnectionLine: View {
         devices.first { $0.id == connection.toDeviceId }
     }
     
+    var cableType: CableType {
+        CableType(rawValue: connection.cableRaw) ?? .other
+    }
+    
+    var cableColor: Color {
+        switch cableType {
+        case .xlr: return Color.blue
+        case .trs: return Color.green
+        case .ts: return Color.orange
+        case .midiDIN, .usbMIDI: return Color.purple
+        case .usb: return Color.cyan
+        case .opticalADAT: return Color.yellow
+        case .ethernet: return Color.teal
+        case .thunderbolt: return Color.indigo
+        case .wordClockBNC: return Color.pink
+        case .cv: return Color.mint
+        case .other: return Color.gray
+        }
+    }
+    
+    var lineWidth: CGFloat {
+        switch cableType {
+        case .xlr, .opticalADAT: return 3.0
+        case .trs, .midiDIN, .usbMIDI: return 2.5
+        default: return 2.0
+        }
+    }
+    
     var body: some View {
         if let source = sourceDevice, let dest = destinationDevice {
-            Path { path in
-                let start = CGPoint(x: source.posX * scale, y: source.posY * scale)
-                let end = CGPoint(x: dest.posX * scale, y: dest.posY * scale)
+            ZStack {
+                // Connection path
+                Path { path in
+                    let start = CGPoint(x: source.posX * scale, y: source.posY * scale)
+                    let end = CGPoint(x: dest.posX * scale, y: dest.posY * scale)
+                    
+                    // Create a curved path for better visibility
+                    path.move(to: start)
+                    
+                    let controlPoint1 = CGPoint(
+                        x: start.x + (end.x - start.x) * 0.25,
+                        y: start.y
+                    )
+                    let controlPoint2 = CGPoint(
+                        x: start.x + (end.x - start.x) * 0.75,
+                        y: end.y
+                    )
+                    
+                    path.addCurve(to: end, control1: controlPoint1, control2: controlPoint2)
+                }
+                .stroke(
+                    cableColor.opacity(0.8),
+                    style: StrokeStyle(
+                        lineWidth: lineWidth * scale,
+                        lineCap: .round,
+                        lineJoin: .round
+                    )
+                )
                 
-                path.move(to: start)
-                path.addLine(to: end)
+                // Connection label
+                if !connection.label.isEmpty {
+                    let midX = (source.posX + dest.posX) / 2 * scale
+                    let midY = (source.posY + dest.posY) / 2 * scale
+                    
+                    Text(connection.label)
+                        .font(.caption2)
+                        .padding(4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color(white: 0.95))
+                                .shadow(radius: 1)
+                        )
+                        .position(x: midX, y: midY)
+                }
             }
-            .stroke(Color.gray.opacity(0.5), lineWidth: 2)
         }
     }
 }
