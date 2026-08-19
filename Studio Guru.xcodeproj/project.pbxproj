@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		5F02DB072FE3081200CA8F43 /* iCloudDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F02DB062FE3081200CA8F43 /* iCloudDiagnostics.swift */; };
 		5F2C600B2FE590D1000F29AE /* iCloudDocumentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F2C600A2FE590D1000F29AE /* iCloudDocumentManager.swift */; };
+		5F365DEB30361C1400CD6579 /* SessionCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F365DEA30361C1400CD6579 /* SessionCanvasView.swift */; };
 		5F4B730C2FC91176006E135F /* AssignGearSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F4B730B2FC91176006E135F /* AssignGearSheet.swift */; };
 		5F8300762FF300D800550984 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F8300752FF300D800550984 /* AppDelegate.swift */; };
 		5F847FB62FEC614700200571 /* BackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F847FB52FEC614700200571 /* BackupManager.swift */; };
@@ -40,6 +41,7 @@
 /* Begin PBXFileReference section */
 		5F02DB062FE3081200CA8F43 /* iCloudDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iCloudDiagnostics.swift; sourceTree = "<group>"; };
 		5F2C600A2FE590D1000F29AE /* iCloudDocumentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iCloudDocumentManager.swift; sourceTree = "<group>"; };
+		5F365DEA30361C1400CD6579 /* SessionCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionCanvasView.swift; sourceTree = "<group>"; };
 		5F4B730B2FC91176006E135F /* AssignGearSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssignGearSheet.swift; sourceTree = "<group>"; };
 		5F8300752FF300D800550984 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		5F847FB52FEC614700200571 /* BackupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManager.swift; sourceTree = "<group>"; };
@@ -121,6 +123,7 @@
 				5FEFBD18303538B5003F90C3 /* SessionSnapshotHelper.swift */,
 				5FEFBD1A30353A77003F90C3 /* AddSessionGearView.swift */,
 				5FEFBD1C30353C20003F90C3 /* AddArtistGearView.swift */,
+				5F365DEA30361C1400CD6579 /* SessionCanvasView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -248,6 +251,7 @@
 				5F94AFA0302BC77900D89BBD /* PeopleListView.swift in Sources */,
 				5F94AF9E302BC76A00D89BBD /* MainNavigationView.swift in Sources */,
 				5F94AFA4302BC7A900D89BBD /* PersonEditView.swift in Sources */,
+				5F365DEB30361C1400CD6579 /* SessionCanvasView.swift in Sources */,
 				5FEFBD19303538B5003F90C3 /* SessionSnapshotHelper.swift in Sources */,
 				5F94AFB0302BC83C00D89BBD /* WorkDetailEditViews.swift in Sources */,
 				5F94AFA6302BC7C300D89BBD /* ProjectsListView.swift in Sources */,

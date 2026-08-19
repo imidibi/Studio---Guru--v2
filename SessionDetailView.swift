@@ -532,41 +532,42 @@ struct SessionSetupTab: View {
                         }
                     }
                     
-                    // Device list
+                    // Device list - scrollable
                     if let devices = snapshot.devices, !devices.isEmpty {
                         GroupBox("Devices in Setup (\(devices.count))") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                ForEach(devices.prefix(10)) { device in
-                                    HStack {
-                                        Image(systemName: iconForOwnership(device.ownershipType))
-                                            .foregroundStyle(colorForOwnership(device.ownershipType))
-                                            .frame(width: 24)
-                                        
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(device.nickname.isEmpty ? device.model : device.nickname)
-                                                .font(.subheadline)
-                                            Text(device.manufacturer)
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    ForEach(devices.sorted(by: { d1, d2 in
+                                        let name1 = d1.nickname.isEmpty ? d1.model : d1.nickname
+                                        let name2 = d2.nickname.isEmpty ? d2.model : d2.nickname
+                                        return name1 < name2
+                                    })) { device in
+                                        HStack {
+                                            Image(systemName: iconForOwnership(device.ownershipType))
+                                                .foregroundStyle(colorForOwnership(device.ownershipType))
+                                                .frame(width: 24)
+                                            
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(device.nickname.isEmpty ? device.model : device.nickname)
+                                                    .font(.subheadline)
+                                                Text(device.manufacturer)
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                            
+                                            Spacer()
+                                            
+                                            if device.ownershipType == .artistProvided && !device.ownerName.isEmpty {
+                                                Text(device.ownerName)
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
                                         }
-                                        
-                                        Spacer()
-                                        
-                                        if device.ownershipType == .artistProvided && !device.ownerName.isEmpty {
-                                            Text(device.ownerName)
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                        }
+                                        .padding(.vertical, 4)
                                     }
-                                    .padding(.vertical, 4)
-                                }
-                                
-                                if devices.count > 10 {
-                                    Text("+ \(devices.count - 10) more devices")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
                                 }
                             }
+                            .frame(maxHeight: 300)
                         }
                     }
                 } else {
@@ -580,8 +581,8 @@ struct SessionSetupTab: View {
             .padding()
         }
         .sheet(isPresented: $showingCanvas) {
-            if let snapshot = snapshot {
-                SessionCanvasPlaceholder(session: session, snapshot: snapshot)
+            if snapshot != nil {
+                SessionCanvasView(session: session)
             }
         }
     }
