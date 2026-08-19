@@ -29,43 +29,48 @@ struct SessionCanvasView: View {
         NavigationStack {
             if let snapshot = snapshot {
                 SessionCanvasContent(session: session, snapshot: snapshot)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") { dismiss() }
+                        }
+                        
+                        ToolbarItemGroup(placement: .primaryAction) {
+                            Menu {
+                                Button {
+                                    showingAddGear = true
+                                } label: {
+                                    Label("Add from Gear Locker", systemImage: "archivebox")
+                                }
+                                
+                                Button {
+                                    showingAddArtistGear = true
+                                } label: {
+                                    Label("Add Artist Gear", systemImage: "person.badge.plus")
+                                }
+                                
+                                Divider()
+                                
+                                Button {
+                                    loadSessionsForDuplication()
+                                    showingDuplicateOptions = true
+                                } label: {
+                                    Label("Duplicate from Session", systemImage: "doc.on.doc")
+                                }
+                            } label: {
+                                Label("Add", systemImage: "plus")
+                            }
+                        }
+                    }
             } else {
                 ContentUnavailableView(
                     "No Canvas Available",
                     systemImage: "square.grid.3x3",
                     description: Text("Assign a studio to this session to create a canvas")
                 )
-            }
-        }
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Done") { dismiss() }
-            }
-            
-            ToolbarItemGroup(placement: .primaryAction) {
-                Menu {
-                    Button {
-                        showingAddGear = true
-                    } label: {
-                        Label("Add from Gear Locker", systemImage: "archivebox")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") { dismiss() }
                     }
-                    
-                    Button {
-                        showingAddArtistGear = true
-                    } label: {
-                        Label("Add Artist Gear", systemImage: "person.badge.plus")
-                    }
-                    
-                    Divider()
-                    
-                    Button {
-                        loadSessionsForDuplication()
-                        showingDuplicateOptions = true
-                    } label: {
-                        Label("Duplicate from Session", systemImage: "doc.on.doc")
-                    }
-                } label: {
-                    Label("Add", systemImage: "plus")
                 }
             }
         }
@@ -120,48 +125,60 @@ struct SessionCanvasContent: View {
     }
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // Background grid
-                CanvasGridBackground()
-                
-                // Connections layer
-                ForEach(connections) { connection in
-                    ConnectionLine(
-                        connection: connection,
-                        devices: devices,
-                        scale: canvasScale
-                    )
-                }
-                
-                // Devices layer
-                ForEach(devices) { device in
-                    SessionDeviceView(
-                        device: device,
-                        isSelected: selectedDeviceId == device.id,
-                        scale: canvasScale
-                    )
-                    .position(
-                        x: device.posX * canvasScale,
-                        y: device.posY * canvasScale
-                    )
-                    .onTapGesture {
-                        selectedDeviceId = device.id
-                    }
-                }
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)
-            .gesture(
-                MagnificationGesture()
-                    .onChanged { value in
-                        canvasScale = min(max(value, 0.5), 2.0)
-                    }
+        if devices.isEmpty {
+            ContentUnavailableView(
+                "No Devices on Canvas",
+                systemImage: "square.dashed",
+                description: Text("Add gear from the locker or artist gear using the Add menu")
             )
+            .navigationTitle("Session Canvas")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+        } else {
+            GeometryReader { geometry in
+                ZStack {
+                    // Background grid
+                    CanvasGridBackground()
+                    
+                    // Connections layer
+                    ForEach(connections) { connection in
+                        ConnectionLine(
+                            connection: connection,
+                            devices: devices,
+                            scale: canvasScale
+                        )
+                    }
+                    
+                    // Devices layer
+                    ForEach(devices) { device in
+                        SessionDeviceView(
+                            device: device,
+                            isSelected: selectedDeviceId == device.id,
+                            scale: canvasScale
+                        )
+                        .position(
+                            x: device.posX * canvasScale,
+                            y: device.posY * canvasScale
+                        )
+                        .onTapGesture {
+                            selectedDeviceId = device.id
+                        }
+                    }
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .gesture(
+                    MagnificationGesture()
+                        .onChanged { value in
+                            canvasScale = min(max(value, 0.5), 2.0)
+                        }
+                )
+            }
+            .navigationTitle("Session Canvas")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
         }
-        .navigationTitle("Session Canvas")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
     }
 }
 
