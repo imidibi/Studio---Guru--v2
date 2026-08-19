@@ -47,6 +47,7 @@ struct Studio_GuruApp: App {
             Performance.self,
             Contribution.self,
             SessionEquipment.self,
+            GearReservation.self,
             SessionConfigurationSnapshot.self,
             SnapshotDevice.self,
             SnapshotConnection.self

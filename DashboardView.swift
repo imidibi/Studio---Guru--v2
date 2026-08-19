@@ -80,26 +80,35 @@ struct DashboardView: View {
                 
                 // Quick Stats
                 HStack(spacing: 16) {
-                    StatCard(
-                        title: "Today's Sessions",
-                        value: "\(todaySessions.count)",
-                        icon: "calendar.badge.clock",
-                        color: .blue
-                    )
+                    NavigationLink(destination: SessionsListView()) {
+                        StatCard(
+                            title: "Today's Sessions",
+                            value: "\(todaySessions.count)",
+                            icon: "calendar.badge.clock",
+                            color: .blue
+                        )
+                    }
+                    .buttonStyle(.plain)
                     
-                    StatCard(
-                        title: "Active Studios",
-                        value: "\(activeStudios.count)",
-                        icon: "building.2",
-                        color: .green
-                    )
+                    NavigationLink(destination: StudioCanvasView()) {
+                        StatCard(
+                            title: "Active Studios",
+                            value: "\(activeStudios.count)",
+                            icon: "building.2",
+                            color: .green
+                        )
+                    }
+                    .buttonStyle(.plain)
                     
-                    StatCard(
-                        title: "People",
-                        value: "\(people.filter { !$0.isArchived }.count)",
-                        icon: "person.3",
-                        color: .orange
-                    )
+                    NavigationLink(destination: PeopleListView()) {
+                        StatCard(
+                            title: "People",
+                            value: "\(people.filter { !$0.isArchived }.count)",
+                            icon: "person.3",
+                            color: .orange
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal)
                 

@@ -13,6 +13,7 @@ struct ProjectDetailView: View {
     
     @State private var isEditing = false
     @State private var showingDeleteConfirmation = false
+    @State private var showingAddWork = false
     @State private var sessions: [Session] = []
     @State private var works: [Work] = []
     
@@ -84,7 +85,10 @@ struct ProjectDetailView: View {
                     } else {
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach(sessions.prefix(5)) { session in
-                                SessionRowCompact(session: session)
+                                NavigationLink(destination: SessionDetailView(session: session)) {
+                                    SessionRowCompact(session: session)
+                                }
+                                .buttonStyle(.plain)
                             }
                             
                             if sessions.count > 5 {
@@ -97,22 +101,44 @@ struct ProjectDetailView: View {
                 }
                 
                 // Works/Songs
-                GroupBox("Songs (\(works.count))") {
-                    if works.isEmpty {
-                        Text("No songs yet")
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding()
-                    } else {
-                        VStack(alignment: .leading, spacing: 8) {
-                            ForEach(works.prefix(10)) { work in
-                                WorkRowCompact(work: work)
-                            }
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Songs (\(works.count))")
+                                .font(.headline)
                             
-                            if works.count > 10 {
-                                Text("+ \(works.count - 10) more songs")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                            Spacer()
+                            
+                            Button {
+                                showingAddWork = true
+                            } label: {
+                                Label("Add Song", systemImage: "plus.circle.fill")
+                                    .labelStyle(.iconOnly)
+                                    .font(.title3)
+                                    .foregroundStyle(.blue)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        
+                        if works.isEmpty {
+                            Text("No songs yet")
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .padding()
+                        } else {
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(works.prefix(10)) { work in
+                                    NavigationLink(destination: WorkDetailView(work: work)) {
+                                        WorkRowCompact(work: work)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                
+                                if works.count > 10 {
+                                    Text("+ \(works.count - 10) more songs")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
@@ -148,6 +174,11 @@ struct ProjectDetailView: View {
         }
         .sheet(isPresented: $isEditing) {
             ProjectEditView(project: project)
+        }
+        .sheet(isPresented: $showingAddWork) {
+            AddWorkToProjectView(project: project, onWorkAdded: {
+                loadProjectData()
+            })
         }
         .alert("Delete Project?", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -219,6 +250,72 @@ struct WorkRowCompact: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+struct AddWorkToProjectView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    
+    let project: Project
+    let onWorkAdded: () -> Void
+    
+    @State private var title = ""
+    @State private var versionName = ""
+    @State private var artistName = ""
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Song Information") {
+                    TextField("Title", text: $title)
+                        #if os(iOS)
+                        .textInputAutocapitalization(.words)
+                        #endif
+                    
+                    TextField("Version (optional)", text: $versionName)
+                        #if os(iOS)
+                        .textInputAutocapitalization(.words)
+                        #endif
+                    
+                    TextField("Artist (optional)", text: $artistName)
+                        #if os(iOS)
+                        .textInputAutocapitalization(.words)
+                        #endif
+                }
+                
+                Section {
+                    Text("Project: \(project.name)")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Add Song")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        addWork()
+                    }
+                    .disabled(title.isEmpty)
+                }
+            }
+        }
+    }
+    
+    private func addWork() {
+        let work = Work(title: title, projectID: project.id)
+        work.versionName = versionName
+        work.artistName = artistName
+        
+        modelContext.insert(work)
+        
+        onWorkAdded()
+        dismiss()
     }
 }
 

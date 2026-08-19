@@ -236,6 +236,7 @@ final class DeviceInstance {
 
     @Relationship(deleteRule: .cascade, inverse: \Port.device) var ports: [Port]? = []
     @Relationship(deleteRule: .cascade, inverse: \DocLink.device) var docs: [DocLink]? = []
+    @Relationship(deleteRule: .cascade, inverse: \GearReservation.device) var reservations: [GearReservation]? = []
     
     var studio: Studio?
 
@@ -1424,6 +1425,67 @@ final class SessionEquipment {
     }
 }
 
+// MARK: - GearReservation
+
+enum GearOwnership: String, Codable, CaseIterable {
+    case studioOwned      // Permanent studio gear
+    case gearLocker       // From gear locker (can be assigned to studios)
+    case artistProvided   // Guest gear brought to this session
+    case rental           // Rented for this session
+}
+
+enum ReservationStatus: String, Codable, CaseIterable {
+    case reserved    // Future reservation
+    case active      // Currently in use (session is happening now)
+    case completed   // Session finished, gear returned
+    case cancelled   // Reservation was cancelled
+}
+
+@Model
+final class GearReservation {
+    var id: UUID = UUID()
+    var deviceID: UUID = UUID()        // The gear locker device being reserved
+    var sessionID: UUID = UUID()       // The session reserving the device
+    var studioID: UUID = UUID()        // The studio where it will be used
+    var startDateTime: Date = Date()   // When reservation starts
+    var endDateTime: Date = Date()     // When reservation ends
+    var statusRaw: String = ReservationStatus.reserved.rawValue
+    
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
+    
+    // Relationships
+    var device: DeviceInstance?
+    var session: Session?
+    
+    init(deviceID: UUID, sessionID: UUID, studioID: UUID, startDateTime: Date, endDateTime: Date) {
+        self.id = UUID()
+        self.deviceID = deviceID
+        self.sessionID = sessionID
+        self.studioID = studioID
+        self.startDateTime = startDateTime
+        self.endDateTime = endDateTime
+        self.statusRaw = ReservationStatus.reserved.rawValue
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+    }
+    
+    func markAsModified() {
+        self.modifiedAt = Date()
+    }
+    
+    var status: ReservationStatus {
+        get { ReservationStatus(rawValue: statusRaw) ?? .reserved }
+        set { statusRaw = newValue.rawValue }
+    }
+    
+    /// Check if this reservation conflicts with another time range
+    func conflictsWith(start: Date, end: Date) -> Bool {
+        // Reservations conflict if they overlap in any way
+        return !(end <= startDateTime || start >= endDateTime)
+    }
+}
+
 // MARK: - SessionConfigurationSnapshot
 
 @Model
@@ -1474,6 +1536,14 @@ final class SnapshotDevice {
     var serialNumber: String = ""
     var location: String = ""
     
+    // Ownership tracking
+    var ownershipTypeRaw: String = GearOwnership.studioOwned.rawValue
+    var ownerName: String = ""  // For artist-provided gear
+    var settingsNotes: String = ""  // Free-form notes about settings
+    
+    // Photo attachments for documenting settings
+    @Attribute(.externalStorage) var photoAttachments: [Data] = []
+    
     // Positioning
     var posX: Double = 200
     var posY: Double = 200
@@ -1487,13 +1557,24 @@ final class SnapshotDevice {
     
     var snapshot: SessionConfigurationSnapshot?
     
-    init(originalDeviceID: UUID, manufacturer: String, model: String, nickname: String) {
+    init(originalDeviceID: UUID, manufacturer: String, model: String, nickname: String, ownershipType: GearOwnership = .studioOwned) {
         self.id = UUID()
         self.originalDeviceID = originalDeviceID
         self.manufacturer = manufacturer
         self.model = model
         self.nickname = nickname
+        self.ownershipTypeRaw = ownershipType.rawValue
         self.createdAt = Date()
+    }
+    
+    var ownershipType: GearOwnership {
+        get { GearOwnership(rawValue: ownershipTypeRaw) ?? .studioOwned }
+        set { ownershipTypeRaw = newValue.rawValue }
+    }
+    
+    var category: DeviceCategory {
+        get { DeviceCategory(rawValue: categoryRaw) ?? .other }
+        set { categoryRaw = newValue.rawValue }
     }
 }
 
