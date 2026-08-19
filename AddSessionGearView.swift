@@ -60,6 +60,12 @@ struct AddSessionGearView: View {
                             }
                         }
                         .labelsHidden()
+                        .onChange(of: gearLockerDevices) { _, newDevices in
+                            // Reset selection if current device is no longer available
+                            if let current = selectedDevice, !newDevices.contains(where: { $0.id == current.id }) {
+                                selectedDevice = nil
+                            }
+                        }
                     }
                 }
                 

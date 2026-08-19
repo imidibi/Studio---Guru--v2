@@ -307,7 +307,7 @@ struct GearLockerDeviceRow: View {
         case .patchbay: return "square.grid.3x3"
         case .preamp: return "waveform.circle"
         case .synth: return "waveform.and.person.filled"
-        case .usbHub: return "hub"
+        case .usbHub: return "circle.hexagongrid"
         case .usbExpander: return "rectangle.connected.to.line.below"
         case .videoMonitor: return "tv"
         case .other: return "shippingbox"
