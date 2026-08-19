@@ -211,6 +211,15 @@ struct Studio_GuruApp: App {
                     
                     // Seed default instruments and skills if needed
                     StudioSeed.ensureDefaultInstrumentsSkillsExist(modelContext: sharedModelContainer.mainContext)
+                    
+                    // Auto-return completed reservations on app launch
+                    Task { @MainActor in
+                        do {
+                            try SessionSnapshotHelper.autoReturnCompletedReservations(modelContext: sharedModelContainer.mainContext)
+                        } catch {
+                            print("❌ Error auto-returning reservations: \(error)")
+                        }
+                    }
                 }
                 .onChange(of: storeManager.isPro) { oldValue, newValue in
                     // When Pro status becomes true, ensure Gear Locker exists
