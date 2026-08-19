@@ -10,6 +10,7 @@
 		5F02DB072FE3081200CA8F43 /* iCloudDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F02DB062FE3081200CA8F43 /* iCloudDiagnostics.swift */; };
 		5F2C600B2FE590D1000F29AE /* iCloudDocumentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F2C600A2FE590D1000F29AE /* iCloudDocumentManager.swift */; };
 		5F365DEB30361C1400CD6579 /* SessionCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F365DEA30361C1400CD6579 /* SessionCanvasView.swift */; };
+		5F365DED30362ADE00CD6579 /* SessionStudioHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F365DEC30362ADE00CD6579 /* SessionStudioHelper.swift */; };
 		5F4B730C2FC91176006E135F /* AssignGearSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F4B730B2FC91176006E135F /* AssignGearSheet.swift */; };
 		5F8300762FF300D800550984 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F8300752FF300D800550984 /* AppDelegate.swift */; };
 		5F847FB62FEC614700200571 /* BackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F847FB52FEC614700200571 /* BackupManager.swift */; };
@@ -42,6 +43,7 @@
 		5F02DB062FE3081200CA8F43 /* iCloudDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iCloudDiagnostics.swift; sourceTree = "<group>"; };
 		5F2C600A2FE590D1000F29AE /* iCloudDocumentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iCloudDocumentManager.swift; sourceTree = "<group>"; };
 		5F365DEA30361C1400CD6579 /* SessionCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionCanvasView.swift; sourceTree = "<group>"; };
+		5F365DEC30362ADE00CD6579 /* SessionStudioHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStudioHelper.swift; sourceTree = "<group>"; };
 		5F4B730B2FC91176006E135F /* AssignGearSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssignGearSheet.swift; sourceTree = "<group>"; };
 		5F8300752FF300D800550984 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		5F847FB52FEC614700200571 /* BackupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManager.swift; sourceTree = "<group>"; };
@@ -124,6 +126,7 @@
 				5FEFBD1A30353A77003F90C3 /* AddSessionGearView.swift */,
 				5FEFBD1C30353C20003F90C3 /* AddArtistGearView.swift */,
 				5F365DEA30361C1400CD6579 /* SessionCanvasView.swift */,
+				5F365DEC30362ADE00CD6579 /* SessionStudioHelper.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -237,6 +240,7 @@
 				5F2C600B2FE590D1000F29AE /* iCloudDocumentManager.swift in Sources */,
 				5F94AFB6302BC8BD00D89BBD /* SessionAddViews.swift in Sources */,
 				5FF331D92F9EF13200303C39 /* CanvasAnnotations.swift in Sources */,
+				5F365DED30362ADE00CD6579 /* SessionStudioHelper.swift in Sources */,
 				5F847FB62FEC614700200571 /* BackupManager.swift in Sources */,
 				5F94AFBC302CFABC00D89BBD /* CalendarView.swift in Sources */,
 				5F94AFB4302BC88100D89BBD /* SessionDetailView.swift in Sources */,

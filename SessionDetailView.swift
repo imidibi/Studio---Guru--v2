@@ -473,81 +473,135 @@ struct SessionWorkRow: View {
 
 struct SessionSetupTab: View {
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject var storeManager: StoreManager
+    @Query(sort: \Studio.name, order: .forward) private var allStudios: [Studio]
     let session: Session
     
-    @State private var showingAddGear = false
-    @State private var showingAddArtistGear = false
-    @State private var showingDuplicateOptions = false
-    @State private var sessionsForDuplication: [Session] = []
+    @State private var sessionStudio: Studio?
+    @State private var isLoading = true
+    @State private var error: String?
+    @State private var showingCanvas = false
     
-    var snapshot: SessionConfigurationSnapshot? {
-        session.configurationSnapshot
+    var templateStudio: Studio? {
+        allStudios.first { $0.id == session.studioID }
     }
     
     var body: some View {
-        if let snapshot = snapshot {
-            SessionCanvasContent(session: session, snapshot: snapshot)
-                .toolbar {
-                    ToolbarItemGroup(placement: .primaryAction) {
-                        Menu {
-                            Button {
-                                showingAddGear = true
-                            } label: {
-                                Label("Add from Gear Locker", systemImage: "archivebox")
-                            }
-                            
-                            Button {
-                                showingAddArtistGear = true
-                            } label: {
-                                Label("Add Artist Gear", systemImage: "person.badge.plus")
-                            }
-                            
-                            Divider()
-                            
-                            Button {
-                                loadSessionsForDuplication()
-                                showingDuplicateOptions = true
-                            } label: {
-                                Label("Duplicate from Session", systemImage: "doc.on.doc")
-                            }
-                        } label: {
-                            Label("Add", systemImage: "plus")
+        VStack(spacing: 20) {
+            if isLoading {
+                ProgressView("Preparing session canvas...")
+            } else if let error = error {
+                ContentUnavailableView(
+                    "Error",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(error)
+                )
+            } else if let sessionStudio = sessionStudio {
+                VStack(spacing: 16) {
+                    Image(systemName: "square.grid.3x3.square")
+                        .font(.system(size: 60))
+                        .foregroundStyle(.blue)
+                    
+                    Text("Session Canvas")
+                        .font(.title.bold())
+                    
+                    Text("This session has a dedicated canvas copied from \(templateStudio?.name ?? "the studio")")
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal)
+                    
+                    HStack(spacing: 12) {
+                        if let deviceCount = sessionStudio.devices?.count {
+                            Label("\(deviceCount) Devices", systemImage: "cube.box")
+                        }
+                        if let connectionCount = sessionStudio.connections?.count {
+                            Label("\(connectionCount) Connections", systemImage: "cable.connector")
                         }
                     }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    
+                    Button {
+                        showingCanvas = true
+                    } label: {
+                        Label("Open Canvas Editor", systemImage: "pencil.and.list.clipboard")
+                            .font(.headline)
+                            .padding()
+                            .frame(maxWidth: 300)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding(.top)
                 }
-                .sheet(isPresented: $showingAddGear) {
-                    AddSessionGearView(session: session, onGearAdded: {})
-                }
-                .sheet(isPresented: $showingAddArtistGear) {
-                    AddArtistGearView(session: session, onGearAdded: {})
-                }
-                .sheet(isPresented: $showingDuplicateOptions) {
-                    DuplicateSessionCanvasView(
-                        session: session,
-                        availableSessions: sessionsForDuplication,
-                        onDuplicated: {}
-                    )
-                }
-        } else {
-            ContentUnavailableView(
-                "No Canvas Available",
-                systemImage: "square.grid.3x3",
-                description: Text("Edit this session and assign a studio to create a canvas")
-            )
+                .padding()
+            } else {
+                ContentUnavailableView(
+                    "No Canvas Available",
+                    systemImage: "square.grid.3x3",
+                    description: Text("Assign a studio to this session to create a canvas")
+                )
+            }
+        }
+        .task {
+            await loadSessionStudio()
+        }
+        .sheet(isPresented: $showingCanvas) {
+            if let sessionStudio = sessionStudio {
+                SessionCanvasEditor(studio: sessionStudio, session: session)
+            }
         }
     }
     
-    private func loadSessionsForDuplication() {
-        let descriptor = FetchDescriptor<Session>(
-            sortBy: [SortDescriptor(\.sessionDate, order: .reverse)]
-        )
+    @MainActor
+    private func loadSessionStudio() async {
+        isLoading = true
+        error = nil
         
-        if let allSessions = try? modelContext.fetch(descriptor) {
-            // Filter to sessions that have a snapshot and aren't this session
-            sessionsForDuplication = allSessions.filter {
-                $0.id != session.id && $0.configurationSnapshot != nil
+        // Get or create the session studio
+        guard let templateStudio = templateStudio else {
+            if session.studioID != UUID() {
+                error = "Template studio not found"
             }
+            isLoading = false
+            return
+        }
+        
+        do {
+            sessionStudio = try SessionStudioHelper.getOrCreateSessionStudio(
+                for: session,
+                templateStudio: templateStudio,
+                modelContext: modelContext
+            )
+        } catch {
+            self.error = "Failed to load canvas: \(error.localizedDescription)"
+        }
+        
+        isLoading = false
+    }
+}
+
+// Full-screen canvas editor for the session
+struct SessionCanvasEditor: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var storeManager: StoreManager
+    @EnvironmentObject var cloudKitSync: CloudKitSyncManager
+    
+    let studio: Studio
+    let session: Session
+    
+    var body: some View {
+        NavigationStack {
+            StudioCanvasView()
+                .navigationTitle("Session: \(session.name)")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") {
+                            dismiss()
+                        }
+                    }
+                }
+        }
+        .onAppear {
+            // TODO: Set the selected studio to our session studio
+            // This requires modifying StudioCanvasView to accept an initial selection
         }
     }
 }

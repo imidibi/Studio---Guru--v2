@@ -1211,7 +1211,8 @@ final class Work {
 @Model
 final class Session {
     var id: UUID = UUID()
-    var studioID: UUID = UUID()  // CloudKit requires default value
+    var studioID: UUID = UUID()  // CloudKit requires default value - the original/template studio
+    var sessionStudioID: UUID?   // Optional dedicated studio for this session's canvas
     var projectID: UUID?
     var name: String = ""
     var sessionDate: Date = Date()
