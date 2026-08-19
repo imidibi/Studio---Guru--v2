@@ -32,6 +32,7 @@
 		5F94AFBC302CFABC00D89BBD /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F94AFBB302CFABC00D89BBD /* CalendarView.swift */; };
 		5FEFBD173034EE78003F90C3 /* InstrumentsSkillsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FEFBD163034EE78003F90C3 /* InstrumentsSkillsListView.swift */; };
 		5FEFBD19303538B5003F90C3 /* SessionSnapshotHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FEFBD18303538B5003F90C3 /* SessionSnapshotHelper.swift */; };
+		5FEFBD1B30353A77003F90C3 /* AddSessionGearView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FEFBD1A30353A77003F90C3 /* AddSessionGearView.swift */; };
 		5FF331D92F9EF13200303C39 /* CanvasAnnotations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FF331D82F9EF13200303C39 /* CanvasAnnotations.swift */; };
 /* End PBXBuildFile section */
 
@@ -61,6 +62,7 @@
 		5F94AFBB302CFABC00D89BBD /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
 		5FEFBD163034EE78003F90C3 /* InstrumentsSkillsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentsSkillsListView.swift; sourceTree = "<group>"; };
 		5FEFBD18303538B5003F90C3 /* SessionSnapshotHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSnapshotHelper.swift; sourceTree = "<group>"; };
+		5FEFBD1A30353A77003F90C3 /* AddSessionGearView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSessionGearView.swift; sourceTree = "<group>"; };
 		5FF331D82F9EF13200303C39 /* CanvasAnnotations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasAnnotations.swift; sourceTree = "<group>"; };
 		5FFE5C962F37D70900EB00B9 /* Studio Guru.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Studio Guru.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -115,6 +117,7 @@
 				5F94AFBB302CFABC00D89BBD /* CalendarView.swift */,
 				5FEFBD163034EE78003F90C3 /* InstrumentsSkillsListView.swift */,
 				5FEFBD18303538B5003F90C3 /* SessionSnapshotHelper.swift */,
+				5FEFBD1A30353A77003F90C3 /* AddSessionGearView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -246,6 +249,7 @@
 				5F94AFA6302BC7C300D89BBD /* ProjectsListView.swift in Sources */,
 				5F4B730C2FC91176006E135F /* AssignGearSheet.swift in Sources */,
 				5F94AFA8302BC7DF00D89BBD /* ProjectDetailView.swift in Sources */,
+				5FEFBD1B30353A77003F90C3 /* AddSessionGearView.swift in Sources */,
 				5F94AFAE302BC81400D89BBD /* SessionsListView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

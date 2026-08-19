@@ -704,10 +704,7 @@ struct SessionGearTab: View {
             }
         }
         .sheet(isPresented: $showingAddGear) {
-            loadEquipment() // Refresh when sheet dismisses
-        } content: {
-            // TODO: Create AddSessionEquipmentView
-            Text("Add Gear - Coming Soon")
+            AddSessionGearView(session: session, onGearAdded: loadEquipment)
         }
         .task {
             loadEquipment()
