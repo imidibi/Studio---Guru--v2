@@ -33,6 +33,7 @@
 		5FEFBD173034EE78003F90C3 /* InstrumentsSkillsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FEFBD163034EE78003F90C3 /* InstrumentsSkillsListView.swift */; };
 		5FEFBD19303538B5003F90C3 /* SessionSnapshotHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FEFBD18303538B5003F90C3 /* SessionSnapshotHelper.swift */; };
 		5FEFBD1B30353A77003F90C3 /* AddSessionGearView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FEFBD1A30353A77003F90C3 /* AddSessionGearView.swift */; };
+		5FEFBD1D30353C20003F90C3 /* AddArtistGearView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FEFBD1C30353C20003F90C3 /* AddArtistGearView.swift */; };
 		5FF331D92F9EF13200303C39 /* CanvasAnnotations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FF331D82F9EF13200303C39 /* CanvasAnnotations.swift */; };
 /* End PBXBuildFile section */
 
@@ -63,6 +64,7 @@
 		5FEFBD163034EE78003F90C3 /* InstrumentsSkillsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstrumentsSkillsListView.swift; sourceTree = "<group>"; };
 		5FEFBD18303538B5003F90C3 /* SessionSnapshotHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSnapshotHelper.swift; sourceTree = "<group>"; };
 		5FEFBD1A30353A77003F90C3 /* AddSessionGearView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSessionGearView.swift; sourceTree = "<group>"; };
+		5FEFBD1C30353C20003F90C3 /* AddArtistGearView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddArtistGearView.swift; sourceTree = "<group>"; };
 		5FF331D82F9EF13200303C39 /* CanvasAnnotations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasAnnotations.swift; sourceTree = "<group>"; };
 		5FFE5C962F37D70900EB00B9 /* Studio Guru.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Studio Guru.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -118,6 +120,7 @@
 				5FEFBD163034EE78003F90C3 /* InstrumentsSkillsListView.swift */,
 				5FEFBD18303538B5003F90C3 /* SessionSnapshotHelper.swift */,
 				5FEFBD1A30353A77003F90C3 /* AddSessionGearView.swift */,
+				5FEFBD1C30353C20003F90C3 /* AddArtistGearView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -237,6 +240,7 @@
 				5F94AFB2302BC85400D89BBD /* SessionCreationView.swift in Sources */,
 				5F94AFBA302CFA8200D89BBD /* DashboardView.swift in Sources */,
 				5F94AFAA302BC7EF00D89BBD /* ProjectEditView.swift in Sources */,
+				5FEFBD1D30353C20003F90C3 /* AddArtistGearView.swift in Sources */,
 				5FEFBD173034EE78003F90C3 /* InstrumentsSkillsListView.swift in Sources */,
 				5F94AFAC302BC7FD00D89BBD /* WorksListView.swift in Sources */,
 				5F94AFA2302BC79000D89BBD /* PersonDetailView.swift in Sources */,

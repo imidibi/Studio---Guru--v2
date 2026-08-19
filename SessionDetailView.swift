@@ -639,6 +639,8 @@ struct SessionCanvasPlaceholder: View {
     let session: Session
     let snapshot: SessionConfigurationSnapshot
     
+    @State private var showingAddArtistGear = false
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -654,6 +656,20 @@ struct SessionCanvasPlaceholder: View {
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.tertiary)
                         .padding()
+                    
+                    // Temporary Add Artist Gear button
+                    Button {
+                        showingAddArtistGear = true
+                    } label: {
+                        Label("Add Artist Gear", systemImage: "person.badge.plus")
+                            .font(.headline)
+                            .padding()
+                            .frame(maxWidth: 300)
+                            .background(Color.orange.opacity(0.2))
+                            .foregroundStyle(.orange)
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding()
             }
@@ -665,6 +681,9 @@ struct SessionCanvasPlaceholder: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $showingAddArtistGear) {
+                AddArtistGearView(session: session, onGearAdded: {})
             }
         }
     }

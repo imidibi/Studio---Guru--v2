@@ -153,8 +153,9 @@ enum SessionSnapshotHelper {
         manufacturer: String,
         model: String,
         nickname: String,
-        ownerName: String,
         category: DeviceCategory,
+        ownerName: String,
+        settingsNotes: String,
         to session: Session,
         modelContext: ModelContext
     ) throws {
@@ -171,6 +172,7 @@ enum SessionSnapshotHelper {
         )
         
         snapshotDevice.ownerName = ownerName
+        snapshotDevice.settingsNotes = settingsNotes
         snapshotDevice.categoryRaw = category.rawValue
         snapshotDevice.snapshot = snapshot
         snapshot.devices?.append(snapshotDevice)
