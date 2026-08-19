@@ -11,6 +11,8 @@ import SwiftData
 struct GearLockerInventoryView: View {
     let studio: Studio
     @Query(sort: \Studio.name, order: .forward) private var allStudios: [Studio]
+    @Query private var allReservations: [GearReservation]
+    @Query private var allSessions: [Session]
     @Binding var selectedDeviceId: UUID?
     @Environment(\.modelContext) private var modelContext
     
@@ -30,6 +32,8 @@ struct GearLockerInventoryView: View {
                                         device: device,
                                         isAvailable: isDeviceAvailable(device),
                                         assignedStudioName: assignedStudioName(for: device),
+                                        reservations: reservationsForDevice(device),
+                                        sessions: allSessions,
                                         onTap: {
                                             selectedDeviceId = device.id
                                         },
@@ -118,6 +122,16 @@ struct GearLockerInventoryView: View {
         
         return nil
     }
+    
+    // Get reservations for a device
+    private func reservationsForDevice(_ device: DeviceInstance) -> [GearReservation] {
+        let now = Date()
+        return allReservations.filter { reservation in
+            reservation.deviceID == device.id &&
+            reservation.endDateTime > now &&
+            (reservation.status == .reserved || reservation.status == .active)
+        }.sorted { $0.startDateTime < $1.startDateTime }
+    }
 }
 
 // MARK: - Device Row
@@ -126,6 +140,8 @@ struct GearLockerDeviceRow: View {
     let device: DeviceInstance
     let isAvailable: Bool
     let assignedStudioName: String?
+    let reservations: [GearReservation]
+    let sessions: [Session]
     let onTap: () -> Void
     let onAssign: () -> Void
     let onEdit: () -> Void
@@ -164,6 +180,29 @@ struct GearLockerDeviceRow: View {
                                 .font(.caption2)
                         }
                         .foregroundColor(.orange)
+                    }
+                    
+                    // Show upcoming reservations
+                    if !reservations.isEmpty {
+                        VStack(alignment: .leading, spacing: 2) {
+                            ForEach(reservations.prefix(2)) { reservation in
+                                if let session = sessions.first(where: { $0.id == reservation.sessionID }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "calendar.badge.clock")
+                                            .font(.caption2)
+                                        Text("\(session.name) - \(formatReservationDate(reservation.startDateTime))")
+                                            .font(.caption2)
+                                    }
+                                    .foregroundColor(.purple)
+                                }
+                            }
+                            if reservations.count > 2 {
+                                Text("+\(reservations.count - 2) more")
+                                    .font(.caption2)
+                                    .foregroundColor(.purple)
+                            }
+                        }
+                        .padding(.top, 2)
                     }
                 }
                 
@@ -233,6 +272,14 @@ struct GearLockerDeviceRow: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+    }
+    
+    // Helper function to format reservation date
+    private func formatReservationDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
     
     // Helper function to get icon for device category
