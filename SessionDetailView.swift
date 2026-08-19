@@ -473,222 +473,87 @@ struct SessionWorkRow: View {
 
 struct SessionSetupTab: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject var storeManager: StoreManager
     let session: Session
     
-    @State private var showingCanvas = false
+    @State private var showingAddGear = false
+    @State private var showingAddArtistGear = false
+    @State private var showingDuplicateOptions = false
+    @State private var sessionsForDuplication: [Session] = []
     
     var snapshot: SessionConfigurationSnapshot? {
         session.configurationSnapshot
     }
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                if let snapshot = snapshot {
-                    // Canvas preview/summary
-                    GroupBox("Session Canvas") {
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Studio Configuration")
-                                        .font(.headline)
-                                    Text("Captured from studio setup")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                Button {
-                                    showingCanvas = true
-                                } label: {
-                                    Label("View Canvas", systemImage: "square.grid.3x3")
-                                }
-                                .buttonStyle(.borderedProminent)
+        if let snapshot = snapshot {
+            SessionCanvasContent(session: session, snapshot: snapshot)
+                .toolbar {
+                    ToolbarItemGroup(placement: .primaryAction) {
+                        Menu {
+                            Button {
+                                showingAddGear = true
+                            } label: {
+                                Label("Add from Gear Locker", systemImage: "archivebox")
+                            }
+                            
+                            Button {
+                                showingAddArtistGear = true
+                            } label: {
+                                Label("Add Artist Gear", systemImage: "person.badge.plus")
                             }
                             
                             Divider()
                             
-                            // Summary stats
-                            HStack(spacing: 24) {
-                                StatItem(
-                                    icon: "square.stack.3d.up",
-                                    label: "Devices",
-                                    value: "\(snapshot.devices?.count ?? 0)"
-                                )
-                                
-                                StatItem(
-                                    icon: "cable.connector",
-                                    label: "Connections",
-                                    value: "\(snapshot.connections?.count ?? 0)"
-                                )
-                                
-                                StatItem(
-                                    icon: "calendar",
-                                    label: "Captured",
-                                    value: formatDate(snapshot.createdAt)
-                                )
+                            Button {
+                                loadSessionsForDuplication()
+                                showingDuplicateOptions = true
+                            } label: {
+                                Label("Duplicate from Session", systemImage: "doc.on.doc")
                             }
+                        } label: {
+                            Label("Add", systemImage: "plus")
                         }
                     }
-                    
-                    // Device list - scrollable
-                    if let devices = snapshot.devices, !devices.isEmpty {
-                        GroupBox("Devices in Setup (\(devices.count))") {
-                            ScrollView {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    ForEach(devices.sorted(by: { d1, d2 in
-                                        let name1 = d1.nickname.isEmpty ? d1.model : d1.nickname
-                                        let name2 = d2.nickname.isEmpty ? d2.model : d2.nickname
-                                        return name1 < name2
-                                    })) { device in
-                                        HStack {
-                                            Image(systemName: iconForOwnership(device.ownershipType))
-                                                .foregroundStyle(colorForOwnership(device.ownershipType))
-                                                .frame(width: 24)
-                                            
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text(device.nickname.isEmpty ? device.model : device.nickname)
-                                                    .font(.subheadline)
-                                                Text(device.manufacturer)
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                            
-                                            Spacer()
-                                            
-                                            if device.ownershipType == .artistProvided && !device.ownerName.isEmpty {
-                                                Text(device.ownerName)
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                        }
-                                        .padding(.vertical, 4)
-                                    }
-                                }
-                            }
-                            .frame(maxHeight: 300)
-                        }
-                    }
-                } else {
-                    ContentUnavailableView(
-                        "No Setup Snapshot",
-                        systemImage: "square.grid.3x3",
-                        description: Text("Edit this session and assign a studio to create a setup snapshot")
+                }
+                .sheet(isPresented: $showingAddGear) {
+                    AddSessionGearView(session: session, onGearAdded: {})
+                }
+                .sheet(isPresented: $showingAddArtistGear) {
+                    AddArtistGearView(session: session, onGearAdded: {})
+                }
+                .sheet(isPresented: $showingDuplicateOptions) {
+                    DuplicateSessionCanvasView(
+                        session: session,
+                        availableSessions: sessionsForDuplication,
+                        onDuplicated: {}
                     )
                 }
+        } else {
+            ContentUnavailableView(
+                "No Canvas Available",
+                systemImage: "square.grid.3x3",
+                description: Text("Edit this session and assign a studio to create a canvas")
+            )
+        }
+    }
+    
+    private func loadSessionsForDuplication() {
+        let descriptor = FetchDescriptor<Session>(
+            sortBy: [SortDescriptor(\.sessionDate, order: .reverse)]
+        )
+        
+        if let allSessions = try? modelContext.fetch(descriptor) {
+            // Filter to sessions that have a snapshot and aren't this session
+            sessionsForDuplication = allSessions.filter {
+                $0.id != session.id && $0.configurationSnapshot != nil
             }
-            .padding()
-        }
-        .sheet(isPresented: $showingCanvas) {
-            if snapshot != nil {
-                SessionCanvasView(session: session)
-            }
-        }
-    }
-    
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
-    }
-    
-    private func iconForOwnership(_ ownership: GearOwnership) -> String {
-        switch ownership {
-        case .studioOwned: return "building.2"
-        case .gearLocker: return "archivebox"
-        case .artistProvided: return "person"
-        case .rental: return "dollarsign.circle"
-        }
-    }
-    
-    private func colorForOwnership(_ ownership: GearOwnership) -> Color {
-        switch ownership {
-        case .studioOwned: return .blue
-        case .gearLocker: return .purple
-        case .artistProvided: return .orange
-        case .rental: return .green
         }
     }
 }
 
 // Helper view for stats
-struct StatItem: View {
-    let icon: String
-    let label: String
-    let value: String
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.title3.bold())
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
 
-// Placeholder for full canvas view (to be implemented)
-struct SessionCanvasPlaceholder: View {
-    @Environment(\.dismiss) private var dismiss
-    let session: Session
-    let snapshot: SessionConfigurationSnapshot
-    
-    @State private var showingAddArtistGear = false
-    
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    Text("Session Canvas")
-                        .font(.title.bold())
-                    
-                    Text("Full canvas editor coming soon")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    
-                    Text("This will show the full studio canvas with all devices and connections for this session.")
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.tertiary)
-                        .padding()
-                    
-                    // Temporary Add Artist Gear button
-                    Button {
-                        showingAddArtistGear = true
-                    } label: {
-                        Label("Add Artist Gear", systemImage: "person.badge.plus")
-                            .font(.headline)
-                            .padding()
-                            .frame(maxWidth: 300)
-                            .background(Color.orange.opacity(0.2))
-                            .foregroundStyle(.orange)
-                            .cornerRadius(10)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding()
-            }
-            .navigationTitle("Session Canvas")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-            .sheet(isPresented: $showingAddArtistGear) {
-                AddArtistGearView(session: session, onGearAdded: {})
-            }
-        }
-    }
-}
 
 // MARK: - Gear Tab
 
