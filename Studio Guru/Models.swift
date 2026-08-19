@@ -1432,6 +1432,15 @@ enum GearOwnership: String, Codable, CaseIterable {
     case gearLocker       // From gear locker (can be assigned to studios)
     case artistProvided   // Guest gear brought to this session
     case rental           // Rented for this session
+    
+    var displayName: String {
+        switch self {
+        case .studioOwned: return "Studio"
+        case .gearLocker: return "Locker"
+        case .artistProvided: return "Artist"
+        case .rental: return "Rental"
+        }
+    }
 }
 
 enum ReservationStatus: String, Codable, CaseIterable {

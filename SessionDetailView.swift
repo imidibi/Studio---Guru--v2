@@ -676,21 +676,37 @@ struct SessionGearTab: View {
     @Environment(\.modelContext) private var modelContext
     let session: Session
     
-    @State private var equipment: [SessionEquipment] = []
     @State private var showingAddGear = false
+    @State private var reservations: [GearReservation] = []
+    
+    var snapshot: SessionConfigurationSnapshot? {
+        session.configurationSnapshot
+    }
+    
+    var devices: [SnapshotDevice] {
+        snapshot?.devices?.sorted { device1, device2 in
+            let name1 = device1.nickname.isEmpty ? device1.model : device1.nickname
+            let name2 = device2.nickname.isEmpty ? device2.model : device2.nickname
+            return name1 < name2
+        } ?? []
+    }
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if equipment.isEmpty {
+                if devices.isEmpty {
                     ContentUnavailableView(
                         "No Gear Tracked",
                         systemImage: "guitars",
                         description: Text("Add gear used during this session")
                     )
                 } else {
-                    ForEach(equipment) { item in
-                        SessionEquipmentRow(equipment: item)
+                    ForEach(devices) { device in
+                        SessionGearRow(
+                            device: device,
+                            reservation: reservationForDevice(device),
+                            session: session
+                        )
                     }
                 }
             }
@@ -704,76 +720,145 @@ struct SessionGearTab: View {
             }
         }
         .sheet(isPresented: $showingAddGear) {
-            AddSessionGearView(session: session, onGearAdded: loadEquipment)
+            AddSessionGearView(session: session, onGearAdded: loadReservations)
         }
         .task {
-            loadEquipment()
+            loadReservations()
         }
     }
     
-    private func loadEquipment() {
+    private func loadReservations() {
         let sessionID = session.id
-        let descriptor = FetchDescriptor<SessionEquipment>(
+        let descriptor = FetchDescriptor<GearReservation>(
             predicate: #Predicate { $0.sessionID == sessionID }
         )
-        equipment = (try? modelContext.fetch(descriptor)) ?? []
+        reservations = (try? modelContext.fetch(descriptor)) ?? []
+    }
+    
+    private func reservationForDevice(_ device: SnapshotDevice) -> GearReservation? {
+        reservations.first { $0.deviceID == device.originalDeviceID }
     }
 }
 
-struct SessionEquipmentRow: View {
+struct SessionGearRow: View {
     @Environment(\.modelContext) private var modelContext
-    let equipment: SessionEquipment
+    let device: SnapshotDevice
+    let reservation: GearReservation?
+    let session: Session
     
     @Query private var allDevices: [DeviceInstance]
     
-    var device: DeviceInstance? {
-        allDevices.first { $0.id == equipment.equipmentID }
+    var originalDevice: DeviceInstance? {
+        allDevices.first { $0.id == device.originalDeviceID }
     }
     
     var body: some View {
         GroupBox {
-            HStack(spacing: 12) {
-                // Gear icon
-                Circle()
-                    .fill(Color.orange.opacity(0.2))
-                    .frame(width: 50, height: 50)
-                    .overlay {
-                        Image(systemName: "guitars")
-                            .foregroundStyle(.orange)
-                            .font(.title3)
-                    }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    if let device = device {
-                        Text("\(device.manufacturer) \(device.model)")
-                            .font(.headline)
-                        if !device.nickname.isEmpty && device.nickname != device.model {
-                            Text(device.nickname)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 12) {
+                    // Ownership icon
+                    Circle()
+                        .fill(colorForOwnership(device.ownershipType).opacity(0.2))
+                        .frame(width: 50, height: 50)
+                        .overlay {
+                            Image(systemName: iconForOwnership(device.ownershipType))
+                                .foregroundStyle(colorForOwnership(device.ownershipType))
+                                .font(.title3)
                         }
-                    } else {
-                        Text("Unknown Device")
-                            .foregroundStyle(.secondary)
-                    }
                     
-                    if !equipment.purpose.isEmpty {
-                        Text(equipment.purpose)
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(device.nickname.isEmpty ? device.model : device.nickname)
+                            .font(.headline)
+                        
+                        HStack(spacing: 8) {
+                            Text(device.ownershipType.displayName)
+                                .font(.caption)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(colorForOwnership(device.ownershipType).opacity(0.2))
+                                .foregroundStyle(colorForOwnership(device.ownershipType))
+                                .cornerRadius(4)
+                            
+                            if !device.manufacturer.isEmpty {
+                                Text(device.manufacturer)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        
+                        // Reservation details for gear locker items
+                        if device.ownershipType == .gearLocker, let reservation = reservation {
+                            HStack(spacing: 4) {
+                                Image(systemName: "clock")
+                                    .font(.caption)
+                                Text("\(formatDate(reservation.startDateTime)) - \(formatTime(reservation.endDateTime))")
+                                    .font(.caption)
+                            }
+                            .foregroundStyle(.purple)
                             .padding(.top, 2)
+                        }
+                        
+                        // Owner name for artist gear
+                        if device.ownershipType == .artistProvided && !device.ownerName.isEmpty {
+                            HStack(spacing: 4) {
+                                Image(systemName: "person")
+                                    .font(.caption)
+                                Text(device.ownerName)
+                                    .font(.caption)
+                            }
+                            .foregroundStyle(.orange)
+                            .padding(.top, 2)
+                        }
                     }
                     
-                    if !equipment.settings.isEmpty {
-                        Text("Settings: \(equipment.settings)")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                    }
+                    Spacer()
                 }
                 
-                Spacer()
+                // Settings notes
+                if !device.settingsNotes.isEmpty {
+                    Divider()
+                    VStack(alignment: .leading, spacing: 4) {
+                        Label("Settings", systemImage: "slider.horizontal.3")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(device.settingsNotes)
+                            .font(.body)
+                    }
+                }
             }
+            .padding(4)
         }
+    }
+    
+    private func iconForOwnership(_ ownership: GearOwnership) -> String {
+        switch ownership {
+        case .studioOwned: return "building.2"
+        case .gearLocker: return "cube.box"
+        case .artistProvided: return "person.circle"
+        case .rental: return "dollarsign.circle"
+        }
+    }
+    
+    private func colorForOwnership(_ ownership: GearOwnership) -> Color {
+        switch ownership {
+        case .studioOwned: return .blue
+        case .gearLocker: return .purple
+        case .artistProvided: return .orange
+        case .rental: return .green
+        }
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+    
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }
 
