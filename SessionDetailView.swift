@@ -9,6 +9,9 @@ import SwiftData
 
 struct SessionDetailView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var storeManager: StoreManager
+    @EnvironmentObject var cloudKitSync: CloudKitSyncManager
     let session: Session
     
     @State private var selectedTab: SessionTab = .overview
@@ -78,9 +81,12 @@ struct SessionDetailView: View {
             Button("Archive", role: .destructive) {
                 session.isArchived = true
                 session.markAsModified()
+                dismiss()
             }
             Button("Delete", role: .destructive) {
                 modelContext.delete(session)
+                try? modelContext.save()
+                dismiss()
             }
         }
     }
@@ -244,7 +250,7 @@ struct SessionParticipantRow: View {
     }
     
     var body: some View {
-        GroupBox {
+        GroupBox(content: {
             HStack(spacing: 12) {
                 // Person photo
                 if let person = person {
@@ -305,7 +311,7 @@ struct SessionParticipantRow: View {
                         .font(.caption)
                 }
             }
-        }
+        })
         .contentShape(Rectangle())
         #if os(macOS)
         .onTapGesture(count: 2) {
@@ -473,6 +479,8 @@ struct SessionWorkRow: View {
 
 struct SessionSetupTab: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject var storeManager: StoreManager
+    @EnvironmentObject var cloudKitSync: CloudKitSyncManager
     @Query(sort: \Studio.name, order: .forward) private var allStudios: [Studio]
     let session: Session
     
@@ -545,7 +553,20 @@ struct SessionSetupTab: View {
         }
         .sheet(isPresented: $showingCanvas) {
             if let sessionStudio = sessionStudio {
-                SessionCanvasEditor(studio: sessionStudio, session: session)
+                NavigationStack {
+                    StudioCanvasView(initialStudioId: sessionStudio.id, hideStudioSelector: true)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") {
+                                    showingCanvas = false
+                                }
+                            }
+                        }
+                }
+                .environment(\.modelContext, modelContext)
+                #if os(macOS)
+                .frame(minWidth: 1200, minHeight: 800)
+                #endif
             }
         }
     }
@@ -579,29 +600,6 @@ struct SessionSetupTab: View {
 }
 
 // Full-screen canvas editor for the session
-struct SessionCanvasEditor: View {
-    @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var storeManager: StoreManager
-    @EnvironmentObject var cloudKitSync: CloudKitSyncManager
-    
-    let studio: Studio
-    let session: Session
-    
-    var body: some View {
-        NavigationStack {
-            StudioCanvasView(initialStudioId: studio.id)
-                .navigationTitle("Session: \(session.name)")
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Done") {
-                            dismiss()
-                        }
-                    }
-                }
-        }
-    }
-}
-
 // Helper view for stats
 
 
@@ -609,31 +607,32 @@ struct SessionCanvasEditor: View {
 
 struct SessionGearTab: View {
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Studio.name, order: .forward) private var allStudios: [Studio]
     let session: Session
     
     @State private var showingAddGear = false
     @State private var reservations: [GearReservation] = []
+    @State private var sessionStudio: Studio?
     
-    var snapshot: SessionConfigurationSnapshot? {
-        session.configurationSnapshot
-    }
-    
-    var devices: [SnapshotDevice] {
-        snapshot?.devices?.sorted { device1, device2 in
+    var devices: [DeviceInstance] {
+        guard let sessionStudio = sessionStudio else { return [] }
+        return (sessionStudio.devices ?? []).sorted { device1, device2 in
             let name1 = device1.nickname.isEmpty ? device1.model : device1.nickname
             let name2 = device2.nickname.isEmpty ? device2.model : device2.nickname
             return name1 < name2
-        } ?? []
+        }
     }
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if devices.isEmpty {
+                if sessionStudio == nil {
+                    ProgressView("Loading session gear...")
+                } else if devices.isEmpty {
                     ContentUnavailableView(
                         "No Gear Tracked",
                         systemImage: "guitars",
-                        description: Text("Add gear used during this session")
+                        description: Text("Devices in the session canvas will appear here")
                     )
                 } else {
                     ForEach(devices) { device in
@@ -658,7 +657,30 @@ struct SessionGearTab: View {
             AddSessionGearView(session: session, onGearAdded: loadReservations)
         }
         .task {
+            await loadSessionStudio()
             loadReservations()
+        }
+    }
+    
+    @MainActor
+    private func loadSessionStudio() async {
+        // Get the session studio
+        if let sessionStudioID = session.sessionStudioID {
+            let descriptor = FetchDescriptor<Studio>(
+                predicate: #Predicate { $0.id == sessionStudioID }
+            )
+            sessionStudio = try? modelContext.fetch(descriptor).first
+        } else if let templateStudio = allStudios.first(where: { $0.id == session.studioID }) {
+            // Create session studio if it doesn't exist yet
+            do {
+                sessionStudio = try SessionStudioHelper.getOrCreateSessionStudio(
+                    for: session,
+                    templateStudio: templateStudio,
+                    modelContext: modelContext
+                )
+            } catch {
+                print("❌ Error loading session studio: \(error)")
+            }
         }
     }
     
@@ -670,34 +692,27 @@ struct SessionGearTab: View {
         reservations = (try? modelContext.fetch(descriptor)) ?? []
     }
     
-    private func reservationForDevice(_ device: SnapshotDevice) -> GearReservation? {
-        reservations.first { $0.deviceID == device.originalDeviceID }
+    private func reservationForDevice(_ device: DeviceInstance) -> GearReservation? {
+        reservations.first { $0.deviceID == device.id }
     }
 }
 
 struct SessionGearRow: View {
     @Environment(\.modelContext) private var modelContext
-    let device: SnapshotDevice
+    let device: DeviceInstance
     let reservation: GearReservation?
     let session: Session
     
-    @Query private var allDevices: [DeviceInstance]
-    
-    var originalDevice: DeviceInstance? {
-        allDevices.first { $0.id == device.originalDeviceID }
-    }
-    
     var body: some View {
-        GroupBox {
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 12) {
-                    // Ownership icon
+                    // Device icon
                     Circle()
-                        .fill(colorForOwnership(device.ownershipType).opacity(0.2))
+                        .fill(Color.blue.opacity(0.2))
                         .frame(width: 50, height: 50)
                         .overlay {
-                            Image(systemName: iconForOwnership(device.ownershipType))
-                                .foregroundStyle(colorForOwnership(device.ownershipType))
+                            Image(systemName: iconForCategory(device.category))
+                                .foregroundStyle(.blue)
                                 .font(.title3)
                         }
                     
@@ -706,12 +721,12 @@ struct SessionGearRow: View {
                             .font(.headline)
                         
                         HStack(spacing: 8) {
-                            Text(device.ownershipType.displayName)
+                            Text(device.category.rawValue)
                                 .font(.caption)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
-                                .background(colorForOwnership(device.ownershipType).opacity(0.2))
-                                .foregroundStyle(colorForOwnership(device.ownershipType))
+                                .background(Color.blue.opacity(0.2))
+                                .foregroundStyle(.blue)
                                 .cornerRadius(4)
                             
                             if !device.manufacturer.isEmpty {
@@ -721,8 +736,8 @@ struct SessionGearRow: View {
                             }
                         }
                         
-                        // Reservation details for gear locker items
-                        if device.ownershipType == .gearLocker, let reservation = reservation {
+                        // Reservation details if available
+                        if let reservation = reservation {
                             HStack(spacing: 4) {
                                 Image(systemName: "clock")
                                     .font(.caption)
@@ -732,54 +747,38 @@ struct SessionGearRow: View {
                             .foregroundStyle(.purple)
                             .padding(.top, 2)
                         }
-                        
-                        // Owner name for artist gear
-                        if device.ownershipType == .artistProvided && !device.ownerName.isEmpty {
-                            HStack(spacing: 4) {
-                                Image(systemName: "person")
-                                    .font(.caption)
-                                Text(device.ownerName)
-                                    .font(.caption)
-                            }
-                            .foregroundStyle(.orange)
-                            .padding(.top, 2)
-                        }
                     }
                     
                     Spacer()
                 }
-                
-                // Settings notes
-                if !device.settingsNotes.isEmpty {
-                    Divider()
-                    VStack(alignment: .leading, spacing: 4) {
-                        Label("Settings", systemImage: "slider.horizontal.3")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(device.settingsNotes)
-                            .font(.body)
-                    }
-                }
             }
-            .padding(4)
-        }
+        .padding()
+        #if os(macOS)
+        .background(Color(nsColor: .controlBackgroundColor))
+        #else
+        .background(Color(.secondarySystemBackground))
+        #endif
+        .cornerRadius(8)
     }
     
-    private func iconForOwnership(_ ownership: GearOwnership) -> String {
-        switch ownership {
-        case .studioOwned: return "building.2"
-        case .gearLocker: return "cube.box"
-        case .artistProvided: return "person.circle"
-        case .rental: return "dollarsign.circle"
-        }
-    }
-    
-    private func colorForOwnership(_ ownership: GearOwnership) -> Color {
-        switch ownership {
-        case .studioOwned: return .blue
-        case .gearLocker: return .purple
-        case .artistProvided: return .orange
-        case .rental: return .green
+    private func iconForCategory(_ category: DeviceCategory) -> String {
+        switch category {
+        case .audioInterface: return "waveform.circle"
+        case .mixer, .digitalMixer: return "slider.horizontal.3"
+        case .microphone: return "mic"
+        case .monitor: return "hifispeaker"
+        case .headphones, .headphoneAmp: return "headphones"
+        case .synth, .keyboard: return "pianokeys"
+        case .computer: return "desktopcomputer"
+        case .controlSurface, .midiDevice, .midiInterface: return "gamecontroller"
+        case .preamp, .channelStrip: return "waveform"
+        case .compressor, .busCompressor: return "gauge"
+        case .equalizer: return "slider.vertical.3"
+        case .effectsUnit: return "dial.high"
+        case .patchbay: return "rectangle.connected.to.line.below"
+        case .adatExpander, .usbExpander, .usbHub: return "square.stack.3d.up"
+        case .videoMonitor: return "display"
+        case .multi, .other: return "cube.box"
         }
     }
     

@@ -449,17 +449,17 @@ struct SessionEditView: View {
         session.notes = notes
         session.markAsModified()
         
-        // Create or update snapshot if studio was assigned or changed
+        // Create dedicated session studio from template if studio was assigned or changed
         if studioChanged, let studio = studios.first(where: { $0.id == selectedStudioID }) {
             do {
-                try SessionSnapshotHelper.createOrUpdateSnapshot(
+                let _ = try SessionStudioHelper.getOrCreateSessionStudio(
                     for: session,
-                    from: studio,
+                    templateStudio: studio,
                     modelContext: modelContext
                 )
-                print("✅ Created/updated session canvas from studio: \(studio.name)")
+                print("✅ Created session canvas from studio: \(studio.name)")
             } catch {
-                print("❌ Failed to create snapshot: \(error)")
+                print("❌ Error creating session studio: \(error)")
             }
         }
         

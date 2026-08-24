@@ -51,11 +51,22 @@ struct StudioCanvasView: View {
 
     // Optional initial studio selection (for session canvases)
     let initialStudioId: UUID?
+    // Hide studio selector for session canvases
+    let hideStudioSelector: Bool
     
     @State private var selectedStudioId: UUID?
     
-    init(initialStudioId: UUID? = nil) {
+    init(initialStudioId: UUID? = nil, hideStudioSelector: Bool = false) {
         self.initialStudioId = initialStudioId
+        self.hideStudioSelector = hideStudioSelector
+        // Initialize selectedStudioId with initialStudioId so it's set immediately
+        _selectedStudioId = State(initialValue: initialStudioId)
+        
+        #if DEBUG
+        if let id = initialStudioId {
+            print("🎨 StudioCanvasView init with initialStudioId: \(id)")
+        }
+        #endif
     }
 
     // Paywall
@@ -573,7 +584,23 @@ struct StudioCanvasView: View {
     // MARK: - Detail
 
     private var detail: some View {
-        Group {
+        let _ = {
+            #if DEBUG
+            if let studio = currentStudio {
+                print("🎨 detail: currentStudio exists: \(studio.name)")
+                print("🎨 detail: isSystemStudio=\(studio.isSystemStudio), systemStudioType=\(studio.systemStudioType ?? "nil")")
+                if studio.isSystemStudio && studio.systemStudioType == "gear_locker" {
+                    print("🎨 detail: Showing gear locker view")
+                } else {
+                    print("🎨 detail: Showing studio detail view for session studio")
+                }
+            } else {
+                print("🎨 detail: No studio selected, showing noStudioSelectedView")
+            }
+            #endif
+        }()
+        
+        return Group {
             if let studio = currentStudio {
                 if studio.isSystemStudio && studio.systemStudioType == "gear_locker" {
                     // Show Gear Locker inventory view
@@ -817,7 +844,16 @@ struct StudioCanvasView: View {
 
     @ViewBuilder
     private func studioDetailView(_ studio: Studio) -> some View {
-        studioDetailBase(for: studio)
+        let _ = {
+            #if DEBUG
+            print("🎨 studioDetailView called for studio: \(studio.name)")
+            print("🎨 studioDetailView: studio.id=\(studio.id)")
+            print("🎨 studioDetailView: studio.devices?.count=\(studio.devices?.count ?? 0)")
+            print("🎨 studioDetailView: Calling studioDetailBase")
+            #endif
+        }()
+        
+        return studioDetailBase(for: studio)
             .onChange(of: studio.modifiedAt) { _, _ in
                 // Reload connections when studio is modified (including CloudKit sync)
                 connectionsStore.load(studioId: studio.id)
@@ -1053,7 +1089,17 @@ struct StudioCanvasView: View {
     }
 
     private func studioDetailBase(for studio: Studio) -> some View {
-        ZStack {
+        let _ = {
+            #if DEBUG
+            print("🎨 studioDetailBase called for studio: \(studio.name)")
+            print("🎨 studioDetailBase: studio.devices?.count=\(studio.devices?.count ?? 0)")
+            if let devices = studio.devices {
+                print("🎨 studioDetailBase: Devices: \(devices.map { $0.nickname }.joined(separator: ", "))")
+            }
+            #endif
+        }()
+        
+        return ZStack {
             VStack(spacing: 0) {
                 DetailHeader(
                     studio: studio,
@@ -2675,8 +2721,25 @@ struct StudioCanvasView: View {
     }
 
     private var currentStudio: Studio? {
-        guard let id = selectedStudioId else { return studios.first }
-        return studios.first(where: { $0.id == id })
+        guard let id = selectedStudioId else {
+            #if DEBUG
+            print("🎨 currentStudio: selectedStudioId is nil, returning studios.first")
+            #endif
+            return studios.first
+        }
+        
+        let studio = studios.first(where: { $0.id == id })
+        
+        #if DEBUG
+        print("🎨 currentStudio: selectedStudioId=\(id)")
+        print("🎨 currentStudio: studios.count=\(studios.count)")
+        print("🎨 currentStudio: found studio=\(studio?.name ?? "nil")")
+        if studio == nil {
+            print("🎨 currentStudio: Available studio IDs: \(studios.map { $0.id })")
+        }
+        #endif
+        
+        return studio
     }
     
     private var selectedStudio: Studio? {
@@ -2686,7 +2749,9 @@ struct StudioCanvasView: View {
     private var studioCanvasContent: some View {
         detail
             .safeAreaInset(edge: .top, spacing: 0) {
-                studioSelectorBar
+                if !hideStudioSelector {
+                    studioSelectorBar
+                }
             }
     }
     

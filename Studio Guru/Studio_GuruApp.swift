@@ -16,6 +16,7 @@ struct Studio_GuruApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     #endif
     @StateObject private var storeManager = StoreManager()
+    @StateObject private var cloudKitSync = CloudKitSyncManager()
     @State private var cloudKitSyncStatus: String?
     @State private var isCloudKitSyncing = false
     @Environment(\.scenePhase) var scenePhase
@@ -205,6 +206,7 @@ struct Studio_GuruApp: App {
         WindowGroup {
             MainNavigationView()
                 .environmentObject(storeManager)
+                .environmentObject(cloudKitSync)
                 .onAppear {
                     // Start monitoring CloudKit sync events
                     setupCloudKitMonitoring()

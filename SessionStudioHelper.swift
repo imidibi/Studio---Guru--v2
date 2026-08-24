@@ -37,6 +37,11 @@ struct SessionStudioHelper {
         sessionStudio.showGridOverlay = templateStudio.showGridOverlay
         sessionStudio.canvasDrawingData = templateStudio.canvasDrawingData
         
+        // Maps for translating IDs from template to session studio
+        var deviceIDMap: [UUID: UUID] = [:]
+        var portIDMap: [UUID: UUID] = [:]
+        var channelIDMap: [UUID: UUID] = [:]
+
         // Copy all devices from template studio
         for templateDevice in templateStudio.devices ?? [] {
             let deviceCopy = DeviceInstance(
@@ -51,13 +56,16 @@ struct SessionStudioHelper {
                 posX: templateDevice.posX,
                 posY: templateDevice.posY
             )
-            
+
             deviceCopy.scale = templateDevice.scale
             deviceCopy.zIndex = templateDevice.zIndex
             deviceCopy.categoryRaw = templateDevice.categoryRaw
             deviceCopy.studio = sessionStudio
-            
-            // Copy ports
+
+            // Map device IDs
+            deviceIDMap[templateDevice.id] = deviceCopy.id
+
+            // Copy ports and build port/channel ID maps
             for port in templateDevice.ports ?? [] {
                 let portCopy = Port(
                     name: port.name,
@@ -67,19 +75,29 @@ struct SessionStudioHelper {
                 portCopy.device = deviceCopy
                 deviceCopy.ports?.append(portCopy)
                 modelContext.insert(portCopy)
+
+                // Map port IDs
+                portIDMap[port.id] = portCopy.id
+
+                // Copy channels and map their IDs
+                for channel in port.channels ?? [] {
+                    let channelCopy = Channel(
+                        index: channel.index,
+                        nameLong: channel.nameLong,
+                        nameShort: channel.nameShort,
+                        signal: channel.signal,
+                        grouping: channel.grouping
+                    )
+                    channelCopy.port = portCopy
+                    portCopy.channels?.append(channelCopy)
+
+                    // Map channel IDs
+                    channelIDMap[channel.id] = channelCopy.id
+                }
             }
-            
+
             sessionStudio.devices?.append(deviceCopy)
             modelContext.insert(deviceCopy)
-        }
-        
-        // Copy all connections from template studio
-        // We need to map old device IDs to new device IDs
-        var deviceIDMap: [UUID: UUID] = [:]
-        for (index, templateDevice) in (templateStudio.devices ?? []).enumerated() {
-            if let newDevice = sessionStudio.devices?[index] {
-                deviceIDMap[templateDevice.id] = newDevice.id
-            }
         }
         
         for templateConnection in templateStudio.connections ?? [] {
@@ -106,14 +124,98 @@ struct SessionStudioHelper {
             modelContext.insert(connectionCopy)
         }
         
+        // Copy connection bundles from template studio to session studio
+        // Connection bundles are stored in SwiftData separately from the Studio model
+        let templateStudioId = templateStudio.id
+        let bundleDescriptor = FetchDescriptor<ConnectionBundleModel>(
+            predicate: #Predicate { $0.studioId == templateStudioId }
+        )
+
+        if let templateBundles = try? modelContext.fetch(bundleDescriptor) {
+            #if DEBUG
+            print("📦 SessionStudioHelper: Found \(templateBundles.count) connection bundles to copy from template studio")
+            #endif
+
+            for templateBundle in templateBundles {
+                // Map device IDs in the bundle
+                guard let newFromDeviceID = deviceIDMap[templateBundle.fromDeviceId],
+                      let newToDeviceID = deviceIDMap[templateBundle.toDeviceId] else {
+                    continue
+                }
+
+                // Create new bundle for session studio
+                let sessionBundle = ConnectionBundleModel(
+                    id: UUID(), // New ID for the session bundle
+                    studioId: sessionStudio.id,
+                    fromDeviceId: newFromDeviceID,
+                    toDeviceId: newToDeviceID
+                )
+
+                // Copy edges with mapped device, port, and channel IDs
+                for templateEdge in templateBundle.edges ?? [] {
+                    guard let newFromDevID = deviceIDMap[templateEdge.fromDeviceId],
+                          let newToDevID = deviceIDMap[templateEdge.toDeviceId],
+                          let newFromPortID = portIDMap[templateEdge.fromPortId],
+                          let newToPortID = portIDMap[templateEdge.toPortId],
+                          let newFromChannelID = channelIDMap[templateEdge.fromChannelId],
+                          let newToChannelID = channelIDMap[templateEdge.toChannelId] else {
+                        #if DEBUG
+                        print("⚠️ Skipping edge - missing ID mapping")
+                        #endif
+                        continue
+                    }
+
+                    let sessionEdge = ConnectionEdgeModel(
+                        id: UUID(),
+                        fromDeviceId: newFromDevID,
+                        fromPortId: newFromPortID,
+                        fromChannelId: newFromChannelID,
+                        fromDirection: templateEdge.fromDirection,
+                        toDeviceId: newToDevID,
+                        toPortId: newToPortID,
+                        toChannelId: newToChannelID,
+                        toDirection: templateEdge.toDirection,
+                        fromName: templateEdge.fromName,
+                        toName: templateEdge.toName
+                    )
+                    sessionBundle.edges?.append(sessionEdge)
+                    modelContext.insert(sessionEdge)
+                }
+
+                // Copy endpoint names
+                for templateName in templateBundle.endpointNames ?? [] {
+                    let sessionName = EndpointNameModel(
+                        endpointKey: templateName.endpointKey,
+                        name: templateName.name
+                    )
+                    sessionBundle.endpointNames?.append(sessionName)
+                    modelContext.insert(sessionName)
+                }
+
+                modelContext.insert(sessionBundle)
+
+                #if DEBUG
+                print("📦 SessionStudioHelper: Created connection bundle with \(sessionBundle.edges?.count ?? 0) edges for session studio")
+                #endif
+            }
+
+            #if DEBUG
+            print("📦 SessionStudioHelper: Finished copying connection bundles to session studio")
+            #endif
+        } else {
+            #if DEBUG
+            print("📦 SessionStudioHelper: No connection bundles found in template studio")
+            #endif
+        }
+
         // Save the session studio
         modelContext.insert(sessionStudio)
-        
+
         // Link it to the session
         session.sessionStudioID = sessionStudio.id
-        
+
         try modelContext.save()
-        
+
         return sessionStudio
     }
     
