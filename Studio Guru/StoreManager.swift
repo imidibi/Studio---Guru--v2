@@ -33,23 +33,27 @@ class StoreManager: ObservableObject {
 
     // Computed property to check if user has Pro
     var isPro: Bool {
+        // BETA: All users have Pro access in Studio Guru 2 beta
+        // This will be changed before App Store release
+        return true
+
         #if DEBUG
         // Reference refreshTrigger to make SwiftUI re-evaluate when it changes
         _ = refreshTrigger
-        
+
         // Force free tier overrides everything in debug mode
         if debugForceFreeTier {
             return false
         }
         #endif
-        
+
         #if DEBUG || targetEnvironment(simulator)
         // Allow simulation of Pro tier (only in DEBUG builds and Simulator)
         if debugSimulatePro {
             return true
         }
         #endif
-        
+
         // PRIORITY 1: Trust StoreKit transactions (most reliable)
         // Check for Pro upgrade IAP ONLY
         // NOTE: We do NOT check for bundle ID transactions because App Store
@@ -57,13 +61,13 @@ class StoreManager: ObservableObject {
         if purchasedProductIDs.contains(proProductID) {
             return true
         }
-        
+
         // PRIORITY 2: Check version upgrade (fallback for offline/edge cases)
         // This helps users who upgraded from paid version but StoreKit hasn't synced yet
         if didPurchaseOriginalApp {
             return true
         }
-        
+
         // Default to free tier
         return false
     }
