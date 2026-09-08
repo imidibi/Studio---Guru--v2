@@ -84,6 +84,17 @@ struct SessionDetailView: View {
                 dismiss()
             }
             Button("Delete", role: .destructive) {
+                // Delete the session's associated studio if it exists
+                if let sessionStudioID = session.sessionStudioID {
+                    let descriptor = FetchDescriptor<Studio>(
+                        predicate: #Predicate { $0.id == sessionStudioID }
+                    )
+                    if let sessionStudio = try? modelContext.fetch(descriptor).first {
+                        modelContext.delete(sessionStudio)
+                    }
+                }
+                
+                // Delete the session itself
                 modelContext.delete(session)
                 try? modelContext.save()
                 dismiss()
