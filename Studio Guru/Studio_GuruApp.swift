@@ -96,8 +96,8 @@ struct Studio_GuruApp: App {
             let checkCloudKit = true
             if checkCloudKit {
                 Task {
-                    let ckContainer = CKContainer(identifier: "iCloud.com.ianmiller.studioguru")
-                    let containerLog = "📱 CloudKit container: iCloud.com.ianmiller.studioguru"
+                    let ckContainer = CKContainer(identifier: "iCloud.com.ianmiller.studioguru2")
+                    let containerLog = "📱 CloudKit container: iCloud.com.ianmiller.studioguru2"
                     
                     #if DEBUG
                     print(containerLog)
@@ -211,7 +211,8 @@ struct Studio_GuruApp: App {
                     // Start monitoring CloudKit sync events
                     setupCloudKitMonitoring()
                     
-                    // Seed default instruments and skills if needed
+                    // Clean up duplicates from multi-device seeding, then seed defaults if needed
+                    StudioSeed.mergeDuplicateInstrumentsSkills(modelContext: sharedModelContainer.mainContext)
                     StudioSeed.ensureDefaultInstrumentsSkillsExist(modelContext: sharedModelContainer.mainContext)
                     
                     // Auto-return completed reservations on app launch
@@ -257,7 +258,7 @@ struct Studio_GuruApp: App {
         .modelContainer(sharedModelContainer)
         .commands {
             CommandGroup(replacing: .help) {
-                Button("Studio Guru Help") {
+                Button("Studio Guru 2 Help") {
                     // Post notification to show help
                     NotificationCenter.default.post(name: NSNotification.Name("ShowHelp"), object: nil)
                 }
@@ -338,6 +339,8 @@ struct Studio_GuruApp: App {
                     logMessage = "☁️ CloudKit: Import completed"
                     self.isCloudKitSyncing = false
                     self.cloudKitSyncStatus = "Synced from iCloud"
+                    // Imports can merge another device's seeded defaults - clean up duplicates
+                    StudioSeed.mergeDuplicateInstrumentsSkills(modelContext: self.sharedModelContainer.mainContext)
                 } else {
                     // Import started
                     logMessage = "☁️ CloudKit: Importing from iCloud"

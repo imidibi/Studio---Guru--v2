@@ -32,7 +32,7 @@ class iCloudDocumentManager {
     /// Get the iCloud Documents directory for this app
     static func getiCloudDocumentsDirectory() -> URL? {
         // Try with explicit container identifier first
-        var ubiquityURL = FileManager.default.url(forUbiquityContainerIdentifier: "iCloud.com.ianmiller.studioguru")
+        var ubiquityURL = FileManager.default.url(forUbiquityContainerIdentifier: "iCloud.com.ianmiller.studioguru2")
         
         if ubiquityURL == nil {
             // Fallback to default container

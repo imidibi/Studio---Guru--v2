@@ -265,4 +265,40 @@ enum StudioSeed {
             print("❌ Failed to seed instruments and skills: \(error)")
         }
     }
-}   
+
+    /// Remove duplicate instruments/skills created when multiple devices seeded
+    /// defaults before their first CloudKit sync, then merged.
+    /// The keeper for each name+category is chosen by lowest UUID so every device
+    /// deletes the same copies - concurrent cleanup on two devices can't remove both.
+    static func mergeDuplicateInstrumentsSkills(modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<InstrumentSkill>()
+        guard let all = try? modelContext.fetch(descriptor), all.count > 1 else {
+            return
+        }
+
+        var keeperByKey: [String: InstrumentSkill] = [:]
+        var duplicates: [InstrumentSkill] = []
+
+        for skill in all.sorted(by: { $0.id.uuidString < $1.id.uuidString }) {
+            let key = "\(skill.name.lowercased())|\(skill.category.lowercased())"
+            if keeperByKey[key] == nil {
+                keeperByKey[key] = skill
+            } else {
+                duplicates.append(skill)
+            }
+        }
+
+        guard !duplicates.isEmpty else { return }
+
+        print("🎸 Removing \(duplicates.count) duplicate instruments/skills after sync merge")
+        for duplicate in duplicates {
+            modelContext.delete(duplicate)
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            print("❌ Failed to remove duplicate instruments/skills: \(error)")
+        }
+    }
+}

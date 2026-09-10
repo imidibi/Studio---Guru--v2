@@ -324,7 +324,11 @@ struct WorkEditView: View {
                                     .frame(minHeight: 100)
                                     .scrollContentBackground(.hidden)
                             }
+                            #if os(macOS)
                             .background(Color(nsColor: .controlBackgroundColor))
+                            #else
+                            .background(Color(.secondarySystemBackground))
+                            #endif
                             .cornerRadius(6)
                         }
                     }

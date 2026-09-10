@@ -31,11 +31,15 @@ class StoreManager: ObservableObject {
 
     private var updates: Task<Void, Never>? = nil
 
+    // BETA: All users have Pro access in Studio Guru 2 beta
+    // Set to false before App Store release
+    private static let betaGrantsProAccess = true
+
     // Computed property to check if user has Pro
     var isPro: Bool {
-        // BETA: All users have Pro access in Studio Guru 2 beta
-        // This will be changed before App Store release
-        return true
+        if Self.betaGrantsProAccess {
+            return true
+        }
 
         #if DEBUG
         // Reference refreshTrigger to make SwiftUI re-evaluate when it changes

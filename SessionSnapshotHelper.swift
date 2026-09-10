@@ -71,7 +71,7 @@ enum SessionSnapshotHelper {
                     toDeviceId: connection.toDeviceId,
                     toPortId: connection.toPortId,
                     toChannelId: connection.toChannelId,
-                    label: connection.label ?? ""
+                    label: connection.label
                 )
                 
                 snapshotConnection.cableRaw = connection.cableRaw

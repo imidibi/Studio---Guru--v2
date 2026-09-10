@@ -41,7 +41,11 @@ struct InstrumentsSkillsListView: View {
                         .textFieldStyle(.plain)
                 }
                 .padding(8)
-                .background(Color(.controlBackgroundColor))
+                #if os(macOS)
+                .background(Color(nsColor: .controlBackgroundColor))
+                #else
+                .background(Color(.secondarySystemBackground))
+                #endif
                 .cornerRadius(8)
                 
                 Picker("Category", selection: $selectedCategory) {

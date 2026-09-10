@@ -42,7 +42,7 @@ class CloudKitSyncManager: ObservableObject {
     private let customZone = CKRecordZone(zoneName: "StudioGuruZone")
 
     init() {
-        self.container = CKContainer(identifier: "iCloud.com.ianmiller.studioguru")
+        self.container = CKContainer(identifier: "iCloud.com.ianmiller.studioguru2")
         self.privateDatabase = container.privateCloudDatabase
     }
 

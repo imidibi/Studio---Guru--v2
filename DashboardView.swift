@@ -59,7 +59,7 @@ struct DashboardView: View {
             VStack(spacing: 24) {
                 // Header with gradient
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Studio Guru")
+                    Text("Studio Guru 2")
                         .font(.system(.largeTitle, design: .rounded))
                         .fontWeight(.bold)
                         .foregroundStyle(

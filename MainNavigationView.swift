@@ -74,7 +74,7 @@ struct MainNavigationView: View {
                     }
                 }
             }
-            .navigationTitle("Studio Guru")
+            .navigationTitle("Studio Guru 2")
             .listStyle(.sidebar)
         } detail: {
             destinationView(for: selectedTab)

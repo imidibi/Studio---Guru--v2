@@ -18,7 +18,7 @@ class iCloudDiagnostics: ObservableObject {
     @Published var diagnosticResults: [String] = []
     @Published var showMigrationAlert: Bool = false
     
-    private let containerIdentifier = "iCloud.com.ianmiller.studioguru"
+    private let containerIdentifier = "iCloud.com.ianmiller.studioguru2"
     private let currentTeamID = "BSUPN2VUX7"
     
     /// Run comprehensive iCloud diagnostics

@@ -536,8 +536,7 @@ struct StudioCanvasView: View {
             {
                 let capturedStudio = studio
                 let capturedSid = sid
-                Task.detached { @MainActor [weak connectionsStore] in
-                    guard let connectionsStore else { return }
+                Task.detached { @MainActor in
                     // One-time migration: fix computer interface port types without breaking connections
                     fixComputerInterfacePortTypes(in: capturedStudio)
                     connectionsStore.load(studioId: capturedSid)
@@ -555,8 +554,7 @@ struct StudioCanvasView: View {
             {
                 let capturedStudio = studio
                 let capturedSid = sid
-                Task.detached { @MainActor [weak selectionState, weak connectionsStore] in
-                    guard let selectionState, let connectionsStore else { return }
+                Task.detached { @MainActor in
                     selectionState.selection = nil
                     // Fix computer interface port types when switching studios
                     fixComputerInterfacePortTypes(in: capturedStudio)
@@ -613,7 +611,7 @@ struct StudioCanvasView: View {
                 noStudioSelectedView
             }
         }
-        .navigationTitle(currentStudio?.isSystemStudio == true && currentStudio?.systemStudioType == "gear_locker" ? "Studio Guru - Gear Locker" : "Studio Guru")
+        .navigationTitle(currentStudio?.isSystemStudio == true && currentStudio?.systemStudioType == "gear_locker" ? "Studio Guru 2 - Gear Locker" : "Studio Guru 2")
         .toolbar {
             // Conditional toolbar based on whether viewing Gear Locker or regular studio
             if let studio = currentStudio, studio.isSystemStudio && studio.systemStudioType == "gear_locker" {
@@ -829,7 +827,7 @@ struct StudioCanvasView: View {
                 } label: {
                     Label("Help", systemImage: "questionmark.circle")
                 }
-                .help("How to use Studio Guru")
+                .help("How to use Studio Guru 2")
                 .keyboardShortcut("?", modifiers: .command)
 
                 Button {
@@ -853,7 +851,7 @@ struct StudioCanvasView: View {
             #endif
         }()
         
-        return studioDetailBase(for: studio)
+        studioDetailBase(for: studio)
             .onChange(of: studio.modifiedAt) { _, _ in
                 // Reload connections when studio is modified (including CloudKit sync)
                 connectionsStore.load(studioId: studio.id)
@@ -9471,7 +9469,7 @@ private struct HelpView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     // Welcome header
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Welcome to Studio Guru")
+                        Text("Welcome to Studio Guru 2")
                             .font(.largeTitle)
                             .fontWeight(.bold)
                         
@@ -9587,7 +9585,7 @@ private struct HelpView: View {
                             .fontWeight(.semibold)
 
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Studio Guru offers both a free version and a Pro upgrade:")
+                            Text("Studio Guru 2 offers both a free version and a Pro upgrade:")
                                 .font(.body)
 
                             VStack(alignment: .leading, spacing: 8) {

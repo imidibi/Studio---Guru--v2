@@ -1233,6 +1233,7 @@ final class Session {
     @Relationship(deleteRule: .cascade, inverse: \SessionParticipant.session) var participants: [SessionParticipant]? = []
     @Relationship(deleteRule: .cascade, inverse: \SessionWork.session) var works: [SessionWork]? = []
     @Relationship(deleteRule: .cascade, inverse: \SessionEquipment.session) var equipment: [SessionEquipment]? = []
+    @Relationship(deleteRule: .cascade, inverse: \GearReservation.session) var gearReservations: [GearReservation]? = []
     @Relationship(deleteRule: .cascade, inverse: \SessionConfigurationSnapshot.session) var configurationSnapshot: SessionConfigurationSnapshot?
     
     init(studioID: UUID, name: String, sessionDate: Date = Date()) {
