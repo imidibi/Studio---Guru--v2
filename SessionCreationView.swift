@@ -7,6 +7,61 @@
 import SwiftUI
 import SwiftData
 
+/// Identifies which inline time wheel is expanded in a session form.
+enum TimeField {
+    case start, end
+}
+
+/// Text inputs in the session forms, tracked so an open time wheel
+/// collapses when the user moves to another field.
+enum SessionFormField: Hashable {
+    case name, artist, client, notes
+}
+
+#if os(iOS)
+/// Shows the selected time as a tappable chip; tapping reveals an inline
+/// wheel picker. Instances share `expandedField` so at most one wheel is
+/// open at a time.
+struct CollapsibleTimePicker: View {
+    let label: String
+    @Binding var time: Date
+    let field: TimeField
+    @Binding var expandedField: TimeField?
+
+    private var isExpanded: Bool { expandedField == field }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation {
+                    expandedField = isExpanded ? nil : field
+                }
+            } label: {
+                HStack {
+                    Text(label)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(time, style: .time)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 12)
+                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 8))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                DatePicker(label, selection: $time, displayedComponents: .hourAndMinute)
+                    .labelsHidden()
+                    .datePickerStyle(.wheel)
+                    .frame(maxHeight: 120)
+            }
+        }
+    }
+}
+#endif
+
 struct SessionCreationView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -27,7 +82,9 @@ struct SessionCreationView: View {
     @State private var endTime = Date()
     @State private var notes = ""
     @State private var createSnapshot = true
-    
+    @State private var expandedTimeField: TimeField?
+    @FocusState private var focusedField: SessionFormField?
+
     var regularStudios: [Studio] {
         studios.filter { !$0.isSystemStudio }
     }
@@ -45,6 +102,7 @@ struct SessionCreationView: View {
                                     .foregroundStyle(.secondary)
                                 TextField("e.g., Vocal Tracking, Mix Session", text: $name)
                                     .textFieldStyle(.roundedBorder)
+                                    .focused($focusedField, equals: .name)
                                     #if os(iOS)
                                     .textInputAutocapitalization(.words)
                                     #endif
@@ -126,15 +184,41 @@ struct SessionCreationView: View {
                             Divider()
                             
                             Toggle("Include Start Time", isOn: $hasStartTime)
+                                .onChange(of: hasStartTime) { _, isOn in
+                                    withAnimation {
+                                        if isOn {
+                                            expandedTimeField = .start
+                                        } else if expandedTimeField == .start {
+                                            expandedTimeField = nil
+                                        }
+                                    }
+                                }
                             if hasStartTime {
+                                #if os(iOS)
+                                CollapsibleTimePicker(label: "Start Time", time: $startTime, field: .start, expandedField: $expandedTimeField)
+                                #else
                                 DatePicker("Start", selection: $startTime, displayedComponents: .hourAndMinute)
                                     .labelsHidden()
+                                #endif
                             }
-                            
+
                             Toggle("Include End Time", isOn: $hasEndTime)
+                                .onChange(of: hasEndTime) { _, isOn in
+                                    withAnimation {
+                                        if isOn {
+                                            expandedTimeField = .end
+                                        } else if expandedTimeField == .end {
+                                            expandedTimeField = nil
+                                        }
+                                    }
+                                }
                             if hasEndTime {
+                                #if os(iOS)
+                                CollapsibleTimePicker(label: "End Time", time: $endTime, field: .end, expandedField: $expandedTimeField)
+                                #else
                                 DatePicker("End", selection: $endTime, displayedComponents: .hourAndMinute)
                                     .labelsHidden()
+                                #endif
                             }
                         }
                     }
@@ -148,6 +232,7 @@ struct SessionCreationView: View {
                                     .foregroundStyle(.secondary)
                                 TextField("Artist or band name", text: $artistName)
                                     .textFieldStyle(.roundedBorder)
+                                    .focused($focusedField, equals: .artist)
                                     #if os(iOS)
                                     .textInputAutocapitalization(.words)
                                     #endif
@@ -159,6 +244,7 @@ struct SessionCreationView: View {
                                     .foregroundStyle(.secondary)
                                 TextField("Label, producer, or client", text: $clientName)
                                     .textFieldStyle(.roundedBorder)
+                                    .focused($focusedField, equals: .client)
                                     #if os(iOS)
                                     .textInputAutocapitalization(.words)
                                     #endif
@@ -187,6 +273,7 @@ struct SessionCreationView: View {
                                 .foregroundStyle(.secondary)
                             TextEditor(text: $notes)
                                 .frame(minHeight: 100)
+                                .focused($focusedField, equals: .notes)
                                 .overlay(alignment: .topLeading) {
                                     if notes.isEmpty {
                                         Text("Add any notes about this session...")
@@ -200,6 +287,12 @@ struct SessionCreationView: View {
                     }
                 }
                 .padding()
+            }
+            .onChange(of: focusedField) { _, newValue in
+                // Withdraw any open time wheel when the user moves to a text field
+                if newValue != nil {
+                    withAnimation { expandedTimeField = nil }
+                }
             }
             .navigationTitle("New Session")
             #if os(iOS)

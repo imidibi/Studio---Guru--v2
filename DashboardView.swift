@@ -31,12 +31,10 @@ struct DashboardView: View {
     var upcomingSessions: [Session] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let nextWeek = calendar.date(byAdding: .day, value: 7, to: today)!
-        
+
         return sessions.filter { session in
             !session.isArchived &&
-            session.sessionDate >= today &&
-            session.sessionDate < nextWeek
+            session.sessionDate >= today
         }.sorted { $0.sessionDate < $1.sessionDate }
     }
     
@@ -152,7 +150,7 @@ struct DashboardView: View {
                 }
                 
                 // Upcoming Sessions
-                GroupBox("Upcoming This Week") {
+                GroupBox("Upcoming") {
                     if upcomingSessions.isEmpty {
                         ContentUnavailableView(
                             "No Upcoming Sessions",
@@ -160,16 +158,15 @@ struct DashboardView: View {
                             description: Text("Schedule a new session to get started")
                         )
                         .frame(height: 200)
+                    } else if upcomingSessions.count <= 5 {
+                        upcomingSessionsList
                     } else {
-                        VStack(spacing: 12) {
-                            ForEach(upcomingSessions.prefix(10)) { session in
-                                NavigationLink(destination: SessionDetailView(session: session)) {
-                                    UpcomingSessionRow(session: session, studios: activeStudios)
-                                }
-                                .buttonStyle(.plain)
-                            }
+                        // Scroll within the section so long schedules don't
+                        // stretch the dashboard
+                        ScrollView {
+                            upcomingSessionsList
                         }
-                        .padding(.vertical, 4)
+                        .frame(height: 420)
                     }
                 }
                 .padding(.horizontal)
@@ -183,6 +180,18 @@ struct DashboardView: View {
         .sheet(isPresented: $showingNewPerson) {
             PersonEditView(person: nil)
         }
+    }
+
+    private var upcomingSessionsList: some View {
+        VStack(spacing: 12) {
+            ForEach(upcomingSessions) { session in
+                NavigationLink(destination: SessionDetailView(session: session)) {
+                    UpcomingSessionRow(session: session, studios: activeStudios)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 

@@ -239,7 +239,9 @@ struct SessionEditView: View {
     @State private var hasEndTime = false
     @State private var endTime = Date()
     @State private var notes = ""
-    
+    @State private var expandedTimeField: TimeField?
+    @FocusState private var focusedField: SessionFormField?
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -252,6 +254,7 @@ struct SessionEditView: View {
                                 .foregroundStyle(.secondary)
                             TextField("Enter session name", text: $name)
                                 .textFieldStyle(.roundedBorder)
+                                .focused($focusedField, equals: .name)
                         }
                     }
                     
@@ -328,6 +331,9 @@ struct SessionEditView: View {
                             
                             Toggle("Include Start Time", isOn: $hasStartTime)
                             if hasStartTime {
+                                #if os(iOS)
+                                CollapsibleTimePicker(label: "Start Time", time: $startTime, field: .start, expandedField: $expandedTimeField)
+                                #else
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Start Time")
                                         .font(.subheadline)
@@ -335,10 +341,14 @@ struct SessionEditView: View {
                                     DatePicker("Start", selection: $startTime, displayedComponents: .hourAndMinute)
                                         .labelsHidden()
                                 }
+                                #endif
                             }
-                            
+
                             Toggle("Include End Time", isOn: $hasEndTime)
                             if hasEndTime {
+                                #if os(iOS)
+                                CollapsibleTimePicker(label: "End Time", time: $endTime, field: .end, expandedField: $expandedTimeField)
+                                #else
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("End Time")
                                         .font(.subheadline)
@@ -346,6 +356,7 @@ struct SessionEditView: View {
                                     DatePicker("End", selection: $endTime, displayedComponents: .hourAndMinute)
                                         .labelsHidden()
                                 }
+                                #endif
                             }
                         }
                     }
@@ -359,6 +370,7 @@ struct SessionEditView: View {
                                     .foregroundStyle(.secondary)
                                 TextField("Artist or band name", text: $artistName)
                                     .textFieldStyle(.roundedBorder)
+                                    .focused($focusedField, equals: .artist)
                             }
                             
                             VStack(alignment: .leading, spacing: 8) {
@@ -367,6 +379,7 @@ struct SessionEditView: View {
                                     .foregroundStyle(.secondary)
                                 TextField("Client or label name", text: $clientName)
                                     .textFieldStyle(.roundedBorder)
+                                    .focused($focusedField, equals: .client)
                             }
                         }
                     }
@@ -386,6 +399,7 @@ struct SessionEditView: View {
                                 TextEditor(text: $notes)
                                     .frame(minHeight: 100)
                                     .scrollContentBackground(.hidden)
+                                    .focused($focusedField, equals: .notes)
                             }
                             #if os(macOS)
                             .background(Color(nsColor: .controlBackgroundColor))
@@ -397,6 +411,12 @@ struct SessionEditView: View {
                     }
                 }
                 .padding()
+            }
+            .onChange(of: focusedField) { _, newValue in
+                // Withdraw any open time wheel when the user moves to a text field
+                if newValue != nil {
+                    withAnimation { expandedTimeField = nil }
+                }
             }
             .navigationTitle("Edit Session")
             #if os(iOS)
