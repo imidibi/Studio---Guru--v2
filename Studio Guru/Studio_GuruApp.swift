@@ -43,6 +43,7 @@ struct Studio_GuruApp: App {
             Project.self,
             Work.self,
             Session.self,
+            SessionNote.self,
             SessionParticipant.self,
             SessionWork.self,
             Performance.self,

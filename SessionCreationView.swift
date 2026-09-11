@@ -338,9 +338,16 @@ struct SessionCreationView: View {
         session.clientName = clientName
         session.startTime = hasStartTime ? startTime : nil
         session.endTime = hasEndTime ? endTime : nil
-        session.notes = notes
-        
+
         modelContext.insert(session)
+
+        // The note entered at creation becomes the session's first note
+        let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedNotes.isEmpty {
+            let note = SessionNote(text: trimmedNotes)
+            note.session = session
+            modelContext.insert(note)
+        }
         
         // Create dedicated session studio from template
         if let studio = studios.first(where: { $0.id == studioID }) {

@@ -53,12 +53,15 @@ struct StudioCanvasView: View {
     let initialStudioId: UUID?
     // Hide studio selector for session canvases
     let hideStudioSelector: Bool
-    
+    // Custom title so session canvases can show their session/studio context
+    let navigationTitleOverride: String?
+
     @State private var selectedStudioId: UUID?
-    
-    init(initialStudioId: UUID? = nil, hideStudioSelector: Bool = false) {
+
+    init(initialStudioId: UUID? = nil, hideStudioSelector: Bool = false, navigationTitleOverride: String? = nil) {
         self.initialStudioId = initialStudioId
         self.hideStudioSelector = hideStudioSelector
+        self.navigationTitleOverride = navigationTitleOverride
         // Initialize selectedStudioId with initialStudioId so it's set immediately
         _selectedStudioId = State(initialValue: initialStudioId)
         
@@ -611,7 +614,7 @@ struct StudioCanvasView: View {
                 noStudioSelectedView
             }
         }
-        .navigationTitle(currentStudio?.isSystemStudio == true && currentStudio?.systemStudioType == "gear_locker" ? "Studio Guru 2 - Gear Locker" : "Studio Guru 2")
+        .navigationTitle(navigationTitleOverride ?? (currentStudio?.isSystemStudio == true && currentStudio?.systemStudioType == "gear_locker" ? "Studio Guru 2 - Gear Locker" : "Studio Guru 2"))
         .toolbar {
             // Conditional toolbar based on whether viewing Gear Locker or regular studio
             if let studio = currentStudio, studio.isSystemStudio && studio.systemStudioType == "gear_locker" {

@@ -238,7 +238,6 @@ struct SessionEditView: View {
     @State private var startTime = Date()
     @State private var hasEndTime = false
     @State private var endTime = Date()
-    @State private var notes = ""
     @State private var expandedTimeField: TimeField?
     @FocusState private var focusedField: SessionFormField?
 
@@ -384,31 +383,6 @@ struct SessionEditView: View {
                         }
                     }
                     
-                    // Notes
-                    GroupBox("Notes") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Session notes")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            ZStack(alignment: .topLeading) {
-                                if notes.isEmpty {
-                                    Text("Add any notes about this session...")
-                                        .foregroundStyle(.secondary)
-                                        .padding(8)
-                                }
-                                TextEditor(text: $notes)
-                                    .frame(minHeight: 100)
-                                    .scrollContentBackground(.hidden)
-                                    .focused($focusedField, equals: .notes)
-                            }
-                            #if os(macOS)
-                            .background(Color(nsColor: .controlBackgroundColor))
-                            #else
-                            .background(Color(.systemBackground))
-                            #endif
-                            .cornerRadius(6)
-                        }
-                    }
                 }
                 .padding()
             }
@@ -449,7 +423,6 @@ struct SessionEditView: View {
         startTime = session.startTime ?? Date()
         hasEndTime = session.endTime != nil
         endTime = session.endTime ?? Date()
-        notes = session.notes
     }
     
     private func saveSession() {
@@ -466,7 +439,6 @@ struct SessionEditView: View {
         session.clientName = clientName
         session.startTime = hasStartTime ? startTime : nil
         session.endTime = hasEndTime ? endTime : nil
-        session.notes = notes
         session.markAsModified()
         
         // Create dedicated session studio from template if studio was assigned or changed

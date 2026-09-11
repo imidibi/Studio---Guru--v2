@@ -562,26 +562,45 @@ struct SessionSetupTab: View {
         .task {
             await loadSessionStudio()
         }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $showingCanvas) {
+            sessionCanvasEditor
+        }
+        #else
         .sheet(isPresented: $showingCanvas) {
-            if let sessionStudio = sessionStudio {
-                NavigationStack {
-                    StudioCanvasView(initialStudioId: sessionStudio.id, hideStudioSelector: true)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Done") {
-                                    showingCanvas = false
-                                }
-                            }
+            let screen = NSScreen.main?.visibleFrame.size ?? CGSize(width: 1440, height: 900)
+            sessionCanvasEditor
+                .frame(width: screen.width * 0.92, height: screen.height * 0.9)
+        }
+        #endif
+    }
+
+    /// Title making clear this canvas belongs to one session, based on one studio
+    private var canvasTitle: String {
+        "Session: \(session.name) • \(templateStudio?.name ?? "Studio")"
+    }
+
+    @ViewBuilder
+    private var sessionCanvasEditor: some View {
+        if let sessionStudio = sessionStudio {
+            NavigationStack {
+                StudioCanvasView(
+                    initialStudioId: sessionStudio.id,
+                    hideStudioSelector: true,
+                    navigationTitleOverride: canvasTitle
+                )
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") {
+                            showingCanvas = false
                         }
+                    }
                 }
-                .environment(\.modelContext, modelContext)
-                #if os(macOS)
-                .frame(minWidth: 1200, minHeight: 800)
-                #endif
             }
+            .environment(\.modelContext, modelContext)
         }
     }
-    
+
     @MainActor
     private func loadSessionStudio() async {
         isLoading = true
@@ -810,34 +829,149 @@ struct SessionGearRow: View {
 // MARK: - Notes Tab
 
 struct SessionNotesTab: View {
+    @Environment(\.modelContext) private var modelContext
     let session: Session
-    
-    @State private var isEditing = false
-    
+
+    @State private var newNoteText = ""
+    @State private var editingNoteID: UUID?
+    @State private var editingText = ""
+
+    private var notes: [SessionNote] {
+        (session.sessionNotes ?? []).sorted { $0.createdAt < $1.createdAt }
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if session.notes.isEmpty {
+                // New note entry
+                GroupBox {
+                    HStack(alignment: .bottom, spacing: 12) {
+                        TextField("Add a note...", text: $newNoteText, axis: .vertical)
+                            .textFieldStyle(.plain)
+                            .lineLimit(1...6)
+                        Button {
+                            addNote()
+                        } label: {
+                            Label("Add", systemImage: "plus.circle.fill")
+                        }
+                        .disabled(newNoteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    .padding(4)
+                }
+
+                if notes.isEmpty {
                     ContentUnavailableView(
                         "No Notes",
                         systemImage: "note.text",
-                        description: Text("Add notes about this session")
+                        description: Text("Notes you add during the session appear here")
                     )
                 } else {
-                    Text(session.notes)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 0) {
+                            ForEach(Array(notes.enumerated()), id: \.element.id) { index, note in
+                                noteRow(index: index, note: note)
+                                    .padding(.vertical, 10)
+                                if index < notes.count - 1 {
+                                    Divider()
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 4)
+                    }
                 }
             }
             .padding()
         }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button { isEditing = true } label: {
-                    Label("Edit Notes", systemImage: "pencil")
+        .onAppear { migrateLegacyNotes() }
+    }
+
+    @ViewBuilder
+    private func noteRow(index: Int, note: SessionNote) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(index + 1).")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+                .frame(width: 28, alignment: .trailing)
+
+            if editingNoteID == note.id {
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("Note", text: $editingText, axis: .vertical)
+                        .textFieldStyle(.roundedBorder)
+                        .lineLimit(1...8)
+                    HStack {
+                        Button("Save") { saveEdit(note) }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(editingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        Button("Cancel") { editingNoteID = nil }
+                            .buttonStyle(.bordered)
+                    }
                 }
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(note.text)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(note.createdAt.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+
+                Button {
+                    editingText = note.text
+                    editingNoteID = note.id
+                } label: {
+                    Image(systemName: "pencil")
+                }
+                .buttonStyle(.borderless)
+                .help("Edit note")
+
+                Button(role: .destructive) {
+                    deleteNote(note)
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+                .help("Delete note")
             }
         }
+    }
+
+    private func addNote() {
+        let text = newNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        let note = SessionNote(text: text)
+        note.session = session
+        modelContext.insert(note)
+        session.markAsModified()
+        newNoteText = ""
+    }
+
+    private func saveEdit(_ note: SessionNote) {
+        let text = editingText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        note.text = text
+        note.markAsModified()
+        session.markAsModified()
+        editingNoteID = nil
+    }
+
+    private func deleteNote(_ note: SessionNote) {
+        if editingNoteID == note.id {
+            editingNoteID = nil
+        }
+        modelContext.delete(note)
+        session.markAsModified()
+    }
+
+    /// Convert the legacy single-string session notes into the first note entry.
+    private func migrateLegacyNotes() {
+        guard !session.notes.isEmpty else { return }
+        let note = SessionNote(text: session.notes)
+        // Date the migrated note at session creation so it sorts first
+        note.createdAt = session.createdAt
+        note.session = session
+        modelContext.insert(note)
+        session.notes = ""
+        session.markAsModified()
     }
 }
 

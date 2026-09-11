@@ -1234,6 +1234,7 @@ final class Session {
     @Relationship(deleteRule: .cascade, inverse: \SessionWork.session) var works: [SessionWork]? = []
     @Relationship(deleteRule: .cascade, inverse: \SessionEquipment.session) var equipment: [SessionEquipment]? = []
     @Relationship(deleteRule: .cascade, inverse: \GearReservation.session) var gearReservations: [GearReservation]? = []
+    @Relationship(deleteRule: .cascade, inverse: \SessionNote.session) var sessionNotes: [SessionNote]? = []
     @Relationship(deleteRule: .cascade, inverse: \SessionConfigurationSnapshot.session) var configurationSnapshot: SessionConfigurationSnapshot?
     
     init(studioID: UUID, name: String, sessionDate: Date = Date()) {
@@ -1260,6 +1261,30 @@ final class Session {
     var sessionType: SessionType {
         get { SessionType(rawValue: sessionTypeRaw) ?? .other }
         set { sessionTypeRaw = newValue.rawValue }
+    }
+}
+
+// MARK: - SessionNote
+
+@Model
+final class SessionNote {
+    var id: UUID = UUID()
+    var text: String = ""
+
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
+
+    var session: Session?
+
+    init(text: String) {
+        self.id = UUID()
+        self.text = text
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+    }
+
+    func markAsModified() {
+        self.modifiedAt = Date()
     }
 }
 
