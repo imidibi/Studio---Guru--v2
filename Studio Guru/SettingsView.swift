@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import StoreKit
 import Network
 
 struct SettingsView: View {
@@ -59,19 +60,9 @@ struct SettingsView: View {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
     }
     
-    /// Detect if app is running via TestFlight
-    private var isTestFlight: Bool {
-        #if DEBUG
-        return false
-        #else
-        // Check if running in TestFlight environment
-        if let receiptURL = Bundle.main.appStoreReceiptURL {
-            return receiptURL.lastPathComponent == "sandboxReceipt"
-        }
-        return false
-        #endif
-    }
-    
+    /// Whether the app is running via TestFlight; set from AppTransaction on appear
+    @State private var isTestFlight = false
+
     /// Show debug section in DEBUG builds or TestFlight
     private var showDebugSection: Bool {
         #if DEBUG
@@ -587,6 +578,15 @@ struct SettingsView: View {
             .padding()
             #endif
             .navigationTitle("Settings")
+            .task {
+                #if !DEBUG
+                // TestFlight builds run in the sandbox App Store environment
+                if let result = try? await AppTransaction.shared,
+                   case .verified(let appTransaction) = result {
+                    isTestFlight = appTransaction.environment == .sandbox
+                }
+                #endif
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {

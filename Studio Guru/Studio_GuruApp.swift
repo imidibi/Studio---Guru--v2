@@ -341,7 +341,10 @@ struct Studio_GuruApp: App {
                     self.isCloudKitSyncing = false
                     self.cloudKitSyncStatus = "Synced from iCloud"
                     // Imports can merge another device's seeded defaults - clean up duplicates
-                    StudioSeed.mergeDuplicateInstrumentsSkills(modelContext: self.sharedModelContainer.mainContext)
+                    let container = self.sharedModelContainer
+                    Task { @MainActor in
+                        StudioSeed.mergeDuplicateInstrumentsSkills(modelContext: container.mainContext)
+                    }
                 } else {
                     // Import started
                     logMessage = "☁️ CloudKit: Importing from iCloud"
