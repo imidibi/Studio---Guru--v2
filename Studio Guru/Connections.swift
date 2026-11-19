@@ -459,6 +459,54 @@ final class ConnectionsStore: ObservableObject {
         bundlesByStudio[studioId] = bundles
     }
     
+    /// Rewrites endpoint references (used when ports are migrated or merged). Edges that become
+    /// duplicates because several old channels collapse onto one endpoint are dropped.
+    /// `transform` returns nil to leave an endpoint untouched.
+    func remapEndpoints(studioId: UUID, transform: (IOEndpointRef) -> IOEndpointRef?) {
+        guard var studioBundles = bundlesByStudio[studioId] else { return }
+
+        struct EdgePair: Hashable { let from: IOEndpointRef; let to: IOEndpointRef }
+
+        func remapKey(_ key: String) -> String {
+            guard let ref = parseEndpointKey(key), let new = transform(ref) else { return key }
+            return "\(new.deviceId.uuidString):\(new.portId.uuidString):\(new.channelId.uuidString):\(new.direction.rawValue)"
+        }
+
+        var changed = false
+        for (bundleKey, var bundle) in studioBundles {
+            var seen = Set<EdgePair>()
+            var edges: [ConnectionEdge] = []
+            for var edge in bundle.edges {
+                let newFrom = transform(edge.from) ?? edge.from
+                let newTo = transform(edge.to) ?? edge.to
+                if newFrom != edge.from || newTo != edge.to { changed = true }
+                edge.from = newFrom
+                edge.to = newTo
+                if seen.insert(EdgePair(from: newFrom, to: newTo)).inserted {
+                    edges.append(edge)
+                } else {
+                    changed = true
+                }
+            }
+
+            var names: [String: String] = [:]
+            for (key, name) in bundle.endpointNames {
+                let newKey = remapKey(key)
+                if newKey != key { changed = true }
+                if names[newKey] == nil { names[newKey] = name }
+            }
+
+            bundle.edges = edges
+            bundle.endpointNames = names
+            studioBundles[bundleKey] = bundle
+        }
+
+        if changed {
+            bundlesByStudio[studioId] = studioBundles
+            persist(studioId: studioId)
+        }
+    }
+
     /// Clean up orphaned connections that reference non-existent devices, ports, or channels
     func cleanupOrphanedConnections(studio: Studio) {
         let studioId = studio.id
@@ -1356,25 +1404,30 @@ struct ConnectionsDialogView: View {
             }
         }
 
-        // --- Dante: only Dante (Ethernet) <-> Computer Ethernet ---
-        func isDanteDevicePort(_ r: ResolvedEndpoint) -> Bool {
-            if case let .devicePort(type: t, portName: n) = r.kind {
-                return t == .ethernet && n.localizedCaseInsensitiveContains("dante")
-            }
-            return false
+        // --- Bidirectional digital types (Dante, AVB, MIDI over USB) ---
+        // A single port carries both directions, so these may only be patched to a matching port
+        // type (or the host interface that carries them), never to unrelated connector types.
+        func iface(_ r: ResolvedEndpoint) -> ComputerInterface? {
+            if case let .computerInterface(i) = r.kind { return i }
+            return nil
         }
-        func isComputerEthernet(_ r: ResolvedEndpoint) -> Bool {
-            if case let .computerInterface(iface) = r.kind { return iface == .ethernet }
-            return false
+        func hint(_ i: ComputerInterface) -> String {
+            switch i {
+            case .dante: return "Dante connections must go between Dante ports (or a computer Ethernet interface)."
+            case .avb: return "AVB connections must go between AVB ports (or a computer Ethernet interface)."
+            case .midiUSB: return "MIDI over USB connections must go between MIDI over USB ports (or a computer USB interface)."
+            default: return "These ports cannot be connected."
+            }
         }
 
-        let outIsDante = isDanteDevicePort(outR)
-        let inIsDante = isDanteDevicePort(inR)
-        if outIsDante || inIsDante {
-            let ok = (outIsDante && isComputerEthernet(inR)) || (inIsDante && isComputerEthernet(outR))
-            if !ok {
-                return "Dante connections must connect between a Dante (Ethernet) port and a computer Ethernet interface."
-            }
+        let outIface = iface(outR)
+        let inIface = iface(inR)
+        if let o = outIface, let i = inIface {
+            if !o.canConnect(to: i) { return hint(o.restrictedPeers != nil ? o : i) }
+        } else if let o = outIface, o.restrictedPeers != nil, case .devicePort = inR.kind {
+            return hint(o)
+        } else if let i = inIface, i.restrictedPeers != nil, case .devicePort = outR.kind {
+            return hint(i)
         }
 
         return nil

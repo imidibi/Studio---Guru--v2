@@ -160,8 +160,12 @@ struct StudioCanvasView: View {
     @State private var draftSampleRate: SampleRate =
         SampleRate.allCases.first ?? SampleRate(rawValue: 0)!
 
-    @State private var draftDigitalInputs: Set<DigitalFormat> = []
-    @State private var draftDigitalOutputs: Set<DigitalFormat> = []
+    @State private var draftSpdifInputPorts: Int = 0
+    @State private var draftSpdifOutputPorts: Int = 0
+    @State private var draftAesInputPorts: Int = 0
+    @State private var draftAesOutputPorts: Int = 0
+    @State private var draftWordClockInputPorts: Int = 0
+    @State private var draftWordClockOutputPorts: Int = 0
     /// Quantities for host interfaces (USB/Thunderbolt/Ethernet etc.).
     @State private var draftComputerInterfaceCounts: [ComputerInterface: Int] =
         [:]
@@ -530,6 +534,14 @@ struct StudioCanvasView: View {
                     }
                     // If only Gear Locker exists (or no studios), leave selectedStudioId nil
                     // This will show the "Create Studio" dialog
+                }
+            }
+
+            // Migrate every studio (including the Gear Locker) off the legacy digital I/O model, so
+            // devices are never edited or assigned from a half-migrated state.
+            Task { @MainActor in
+                for studio in studios {
+                    migrateLegacyDigitalIO(in: studio)
                 }
             }
 
@@ -1383,8 +1395,12 @@ struct StudioCanvasView: View {
                 cvInputPorts: $draftCvInputPorts,
                 cvOutputPorts: $draftCvOutputPorts,
                 sampleRate: $draftSampleRate,
-                digitalInputs: $draftDigitalInputs,
-                digitalOutputs: $draftDigitalOutputs,
+                spdifInputPorts: $draftSpdifInputPorts,
+                spdifOutputPorts: $draftSpdifOutputPorts,
+                aesInputPorts: $draftAesInputPorts,
+                aesOutputPorts: $draftAesOutputPorts,
+                wordClockInputPorts: $draftWordClockInputPorts,
+                wordClockOutputPorts: $draftWordClockOutputPorts,
                 computerInterfaceCounts: $draftComputerInterfaceCounts,
                 errorMessage: $deviceEditorError,
                 manualURLs: $draftManualURLs,
@@ -1444,8 +1460,12 @@ struct StudioCanvasView: View {
         draftCvInputPorts = 0
         draftCvOutputPorts = 0
         if let first = SampleRate.allCases.first { draftSampleRate = first }
-        draftDigitalInputs = []
-        draftDigitalOutputs = []
+        draftSpdifInputPorts = 0
+        draftSpdifOutputPorts = 0
+        draftAesInputPorts = 0
+        draftAesOutputPorts = 0
+        draftWordClockInputPorts = 0
+        draftWordClockOutputPorts = 0
         draftComputerInterfaceCounts = [:]
         draftManualURLs = []
         
@@ -1491,8 +1511,13 @@ struct StudioCanvasView: View {
             draftSampleRate = sr
         }
 
-        draftDigitalInputs = Set(d.digitalInputs)
-        draftDigitalOutputs = Set(d.digitalOutputs)
+        d.migrateLegacyDigitalFormats()  // defensive: no-op once migrated
+        draftSpdifInputPorts = max(0, d.spdifInputPortsCount)
+        draftSpdifOutputPorts = max(0, d.spdifOutputPortsCount)
+        draftAesInputPorts = max(0, d.aesInputPortsCount)
+        draftAesOutputPorts = max(0, d.aesOutputPortsCount)
+        draftWordClockInputPorts = max(0, d.wordClockInputPortsCount)
+        draftWordClockOutputPorts = max(0, d.wordClockOutputPortsCount)
 
         var counts: [ComputerInterface: Int] = [:]
         for (k, v) in d.computerInterfaceCounts {
@@ -1647,8 +1672,12 @@ struct StudioCanvasView: View {
             madiOutputPortsCount: sourceDevice.madiOutputPortsCount,
             ethernetPortsCount: 0,
             sampleRate: SampleRate(rawValue: sourceDevice.sampleRateRaw) ?? SampleRate.allCases.first!,
-            digitalInputs: sourceDevice.digitalInputs,
-            digitalOutputs: sourceDevice.digitalOutputs,
+            spdifInputPortsCount: sourceDevice.spdifInputPortsCount,
+            spdifOutputPortsCount: sourceDevice.spdifOutputPortsCount,
+            aesInputPortsCount: sourceDevice.aesInputPortsCount,
+            aesOutputPortsCount: sourceDevice.aesOutputPortsCount,
+            wordClockInputPortsCount: sourceDevice.wordClockInputPortsCount,
+            wordClockOutputPortsCount: sourceDevice.wordClockOutputPortsCount,
             computerInterfaces: expandComputerInterfaces(from: sourceDevice.computerInterfaceCounts),
             posX: location.x,
             posY: location.y,
@@ -1825,8 +1854,12 @@ struct StudioCanvasView: View {
                 cvOutputPortsCount: max(0, draftCvOutputPorts),
                 ethernetPortsCount: 0,
                 sampleRate: draftSampleRate,
-                digitalInputs: Array(draftDigitalInputs),
-                digitalOutputs: Array(draftDigitalOutputs),
+                spdifInputPortsCount: max(0, draftSpdifInputPorts),
+                spdifOutputPortsCount: max(0, draftSpdifOutputPorts),
+                aesInputPortsCount: max(0, draftAesInputPorts),
+                aesOutputPortsCount: max(0, draftAesOutputPorts),
+                wordClockInputPortsCount: max(0, draftWordClockInputPorts),
+                wordClockOutputPortsCount: max(0, draftWordClockOutputPorts),
                 computerInterfaces: expandComputerInterfaces(
                     from: draftComputerInterfaceCounts
                 ),
@@ -1871,8 +1904,12 @@ struct StudioCanvasView: View {
         device.cvInputPortsCount = max(0, draftCvInputPorts)
         device.cvOutputPortsCount = max(0, draftCvOutputPorts)
         device.sampleRateRaw = draftSampleRate.rawValue
-        device.digitalInputs = Array(draftDigitalInputs)
-        device.digitalOutputs = Array(draftDigitalOutputs)
+        device.spdifInputPortsCount = max(0, draftSpdifInputPorts)
+        device.spdifOutputPortsCount = max(0, draftSpdifOutputPorts)
+        device.aesInputPortsCount = max(0, draftAesInputPorts)
+        device.aesOutputPortsCount = max(0, draftAesOutputPorts)
+        device.wordClockInputPortsCount = max(0, draftWordClockInputPorts)
+        device.wordClockOutputPortsCount = max(0, draftWordClockOutputPorts)
         device.computerInterfaces = expandComputerInterfaces(
             from: draftComputerInterfaceCounts
         )
@@ -1886,25 +1923,10 @@ struct StudioCanvasView: View {
         device.currentEstimatedValue = draftCurrentEstimatedValue
         device.assetNotes = draftAssetNotes.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Only rebuild ports if the port configuration has actually changed
-        // This preserves existing port/channel UUIDs and prevents orphaning connections
+        // Only touch ports if the configuration has actually changed. Existing ports and channels
+        // keep their UUIDs (see reconcilePorts) so connections aren't orphaned.
         if portConfigurationChanged(device: device) {
-            device.ports = buildPorts(
-                audioInputs: device.audioInputsCount,
-                audioOutputs: device.audioOutputsCount,
-                digitalInputs: device.digitalInputs,
-                digitalOutputs: device.digitalOutputs,
-                adatInputPorts: device.adatInputPortsCount,
-                adatOutputPorts: device.adatOutputPortsCount,
-                madiInputPorts: device.madiInputPortsCount,
-                madiOutputPorts: device.madiOutputPortsCount,
-                midiInputPorts: device.midiInputPortsCount,
-                midiOutputPorts: device.midiOutputPortsCount,
-                cvInputPorts: device.cvInputPortsCount,
-                cvOutputPorts: device.cvOutputPortsCount,
-                computerInterfaceCounts: device.computerInterfaceCounts,
-                sampleRate: draftSampleRate
-            )
+            reconcilePorts(of: device, sampleRate: draftSampleRate)
         }
         
         // Handle manual PDFs if any were selected (supports multiple)
@@ -1995,8 +2017,12 @@ struct StudioCanvasView: View {
             madiOutputPortsCount: device.madiOutputPortsCount,
             sampleRate: SampleRate(rawValue: device.sampleRateRaw)
                 ?? (SampleRate.allCases.first ?? SampleRate(rawValue: 0)!),
-            digitalInputs: device.digitalInputs,
-            digitalOutputs: device.digitalOutputs,
+            spdifInputPortsCount: device.spdifInputPortsCount,
+            spdifOutputPortsCount: device.spdifOutputPortsCount,
+            aesInputPortsCount: device.aesInputPortsCount,
+            aesOutputPortsCount: device.aesOutputPortsCount,
+            wordClockInputPortsCount: device.wordClockInputPortsCount,
+            wordClockOutputPortsCount: device.wordClockOutputPortsCount,
             computerInterfaces: device.computerInterfaces,
             posX: device.posX + 30,
             posY: device.posY + 30,
@@ -2088,8 +2114,12 @@ struct StudioCanvasView: View {
                 cvOutputPortsCount: removed.cvOutputPortsCount,
                 sampleRate: SampleRate(rawValue: removed.sampleRateRaw)
                     ?? (SampleRate.allCases.first ?? SampleRate(rawValue: 0)!),
-                digitalInputs: removed.digitalInputs,
-                digitalOutputs: removed.digitalOutputs,
+                spdifInputPortsCount: removed.spdifInputPortsCount,
+                spdifOutputPortsCount: removed.spdifOutputPortsCount,
+                aesInputPortsCount: removed.aesInputPortsCount,
+                aesOutputPortsCount: removed.aesOutputPortsCount,
+                wordClockInputPortsCount: removed.wordClockInputPortsCount,
+                wordClockOutputPortsCount: removed.wordClockOutputPortsCount,
                 computerInterfaces: removed.computerInterfaces,
                 posX: newPos.x,
                 posY: newPos.y,
@@ -2193,60 +2223,112 @@ struct StudioCanvasView: View {
         return name
     }
     
-    /// Check if any port configuration has changed that would require rebuilding ports
+    /// Builds the ports a device *should* have from its stored counts.
+    private func buildPorts(for device: DeviceInstance, sampleRate: SampleRate? = nil) -> [Port] {
+        buildPorts(
+            audioInputs: device.audioInputsCount,
+            audioOutputs: device.audioOutputsCount,
+            adatInputPorts: device.adatInputPortsCount,
+            adatOutputPorts: device.adatOutputPortsCount,
+            madiInputPorts: device.madiInputPortsCount,
+            madiOutputPorts: device.madiOutputPortsCount,
+            spdifInputPorts: device.spdifInputPortsCount,
+            spdifOutputPorts: device.spdifOutputPortsCount,
+            aesInputPorts: device.aesInputPortsCount,
+            aesOutputPorts: device.aesOutputPortsCount,
+            wordClockInputPorts: device.wordClockInputPortsCount,
+            wordClockOutputPorts: device.wordClockOutputPortsCount,
+            midiInputPorts: device.midiInputPortsCount,
+            midiOutputPorts: device.midiOutputPortsCount,
+            cvInputPorts: device.cvInputPortsCount,
+            cvOutputPorts: device.cvOutputPortsCount,
+            computerInterfaceCounts: device.computerInterfaceCounts,
+            sampleRate: sampleRate ?? device.sampleRate
+        )
+    }
+
+    private func portSignature(_ ports: [Port]) -> [String] {
+        ports.map {
+            "\($0.typeRaw)|\($0.directionRaw)|\($0.name)|\($0.channels?.count ?? 0)"
+        }
+        .sorted()
+    }
+
+    /// True when the device's existing ports differ from what its counts call for.
     private func portConfigurationChanged(device: DeviceInstance) -> Bool {
-        // If device has no ports yet, we need to build them
         guard let existingPorts = device.ports, !existingPorts.isEmpty else {
             return true
         }
-        
-        // Compare current device configuration with what the ports represent
-        // We need to check if counts or formats have changed
-        
-        // For simplicity, we'll compare the total number of ports and channels
-        // A more sophisticated approach would compare each port type individually
-        let currentPortCount = existingPorts.count
-        
-        // Calculate expected port count based on current configuration
-        var expectedPortCount = 0
-        if device.audioInputsCount > 0 { expectedPortCount += 1 }
-        if device.audioOutputsCount > 0 { expectedPortCount += 1 }
-        expectedPortCount += device.midiInputPortsCount
-        expectedPortCount += device.midiOutputPortsCount
-        expectedPortCount += device.cvInputPortsCount
-        expectedPortCount += device.cvOutputPortsCount
-        expectedPortCount += device.digitalInputs.count
-        expectedPortCount += device.digitalOutputs.count
-        
-        // Add computer interface ports
-        for (_, count) in device.computerInterfaceCounts {
-            expectedPortCount += count
+        return portSignature(existingPorts) != portSignature(buildPorts(for: device))
+    }
+
+    /// Brings `device.ports` in line with its counts while keeping the identity (UUIDs) of every
+    /// port and channel that still exists, so connections made to them survive. Ports are matched
+    /// by type/direction/name first, then by order within the same type/direction (this lets
+    /// legacy ports that were named differently be renamed in place rather than replaced).
+    private func reconcilePorts(of device: DeviceInstance, sampleRate: SampleRate? = nil) {
+        let desired = buildPorts(for: device, sampleRate: sampleRate)
+        var unmatched = device.ports ?? []
+        var matches: [Port?] = Array(repeating: nil, count: desired.count)
+
+        func sameKind(_ a: Port, _ b: Port) -> Bool {
+            a.typeRaw == b.typeRaw && a.directionRaw == b.directionRaw
         }
-        
-        // If port counts don't match, configuration has changed
-        if currentPortCount != expectedPortCount {
-            return true
+
+        for (i, d) in desired.enumerated() {
+            if let idx = unmatched.firstIndex(where: { sameKind($0, d) && $0.name == d.name }) {
+                matches[i] = unmatched.remove(at: idx)
+            }
         }
-        
-        // Check if sample rate changed (affects ADAT/MADI channel counts)
-        let currentSampleRate = SampleRate(rawValue: device.sampleRateRaw) ?? .hz48000
-        if currentSampleRate != draftSampleRate {
-            return true
+        for (i, d) in desired.enumerated() where matches[i] == nil {
+            if let idx = unmatched.firstIndex(where: { sameKind($0, d) }) {
+                matches[i] = unmatched.remove(at: idx)
+            }
         }
-        
-        // If we get here, port configuration hasn't changed
-        return false
+
+        var result: [Port] = []
+        for (i, d) in desired.enumerated() {
+            guard let existing = matches[i] else {
+                result.append(d)
+                continue
+            }
+            if existing.name != d.name { existing.name = d.name }
+
+            // Reuse channels by index; add any new ones, drop any that no longer exist
+            var oldChannels = existing.channels ?? []
+            var newChannels: [Channel] = []
+            for dc in d.channels ?? [] {
+                if let idx = oldChannels.firstIndex(where: { $0.index == dc.index }) {
+                    let ch = oldChannels.remove(at: idx)
+                    if ch.nameLong != dc.nameLong { ch.nameLong = dc.nameLong }
+                    if ch.nameShort != dc.nameShort { ch.nameShort = dc.nameShort }
+                    newChannels.append(ch)
+                } else {
+                    newChannels.append(dc)
+                }
+            }
+            for dropped in oldChannels { modelContext.delete(dropped) }
+            existing.channels = newChannels
+            result.append(existing)
+        }
+
+        for dropped in unmatched { modelContext.delete(dropped) }
+        device.ports = result
     }
 
     private func buildPorts(
         audioInputs: Int,
         audioOutputs: Int,
-        digitalInputs: [DigitalFormat],
-        digitalOutputs: [DigitalFormat],
         adatInputPorts: Int,
         adatOutputPorts: Int,
         madiInputPorts: Int,
         madiOutputPorts: Int,
+        spdifInputPorts: Int,
+        spdifOutputPorts: Int,
+        aesInputPorts: Int,
+        aesOutputPorts: Int,
+        wordClockInputPorts: Int,
+        wordClockOutputPorts: Int,
         midiInputPorts: Int,
         midiOutputPorts: Int,
         cvInputPorts: Int,
@@ -2260,7 +2342,6 @@ struct StudioCanvasView: View {
         let adatChannelsPerPort: Int = srHz >= 88_200 ? 4 : 8
         let madiChannelsPerPort: Int =
             srHz >= 176_400 ? 16 : (srHz >= 88_200 ? 32 : 64)
-        let danteChannelsPerLink: Int = 64
 
         func portLetter(_ i: Int) -> String {
             let scalar = UnicodeScalar(65 + max(0, i))!
@@ -2374,162 +2455,47 @@ struct StudioCanvasView: View {
             return p
         }
 
-        for f in digitalInputs.sorted(by: { $0.rawValue < $1.rawValue }) {
-            switch f {
-            case .adat:
-                let count = max(1, max(0, adatInputPorts))
-                for i in 0..<count {
-                    let name = "ADAT In \(portLetter(i))"
-                    ports.append(
-                        digitalPort(
-                            type: .adatIn,
-                            name: name,
-                            direction: .input,
-                            channels: adatChannelsPerPort
-                        )
-                    )
-                }
-            case .madi:
-                let count = max(1, max(0, madiInputPorts))
-                for i in 0..<count {
-                    let name = "MADI In \(portLetter(i))"
-                    ports.append(
-                        digitalPort(
-                            type: .madiIn,
-                            name: name,
-                            direction: .input,
-                            channels: madiChannelsPerPort
-                        )
-                    )
-                }
-            case .dante:
-                // Represent Dante as an Ethernet-based digital input (one logical link = 64ch).
-                ports.append(
-                    digitalPort(
-                        type: .ethernet,
-                        name: "Dante In (Ethernet)",
-                        direction: .input,
-                        channels: danteChannelsPerLink
-                    )
+        // Digital formats with separate In / Out connectors. Each connector is its own port so
+        // patch-bay style devices can have any number of them.
+        func addPorts(
+            _ count: Int,
+            _ name: (Int) -> String,
+            type: PortType,
+            direction: PortDirection,
+            channels: Int,
+            stereoLR: Bool = false
+        ) {
+            guard count > 0 else { return }
+            for i in 0..<count {
+                let p = digitalPort(
+                    type: type,
+                    name: name(i),
+                    direction: direction,
+                    channels: channels
                 )
-            case .spdif:
-                let p = Port(name: "Digital In (S/PDIF)", type: .spdifIn, direction: .input)
-                p.channels = [
-                    Channel(
-                        index: 1,
-                        nameLong: "Digital In (S/PDIF) L/R",
-                        nameShort: "L/R"
-                    )
-                ]
+                if stereoLR {
+                    // One stereo (L/R) channel, as S/PDIF has always been modelled
+                    p.channels = [
+                        Channel(index: 1, nameLong: "\(p.name) L/R", nameShort: "L/R")
+                    ]
+                }
                 ports.append(p)
-            case .midi:
-                // MIDI over USB (bidirectional - appears in both inputs and outputs)
-                ports.append(
-                    digitalPort(
-                        type: .midiIn,
-                        name: "MIDI over USB In",
-                        direction: .input,
-                        channels: 1
-                    )
-                )
-            case .wordClock:
-                ports.append(
-                    digitalPort(
-                        type: .wordClockIn,
-                        name: "Word Clock In",
-                        direction: .input,
-                        channels: 1
-                    )
-                )
-            case .aesebu:
-                ports.append(
-                    digitalPort(
-                        type: .aesIn,
-                        name: "Digital In (AES/EBU)",
-                        direction: .input,
-                        channels: 2
-                    )
-                )
             }
         }
 
-        for f in digitalOutputs.sorted(by: { $0.rawValue < $1.rawValue }) {
-            switch f {
-            case .adat:
-                let count = max(1, max(0, adatOutputPorts))
-                for i in 0..<count {
-                    let name = "ADAT Out \(portLetter(i))"
-                    ports.append(
-                        digitalPort(
-                            type: .adatOut,
-                            name: name,
-                            direction: .output,
-                            channels: adatChannelsPerPort
-                        )
-                    )
-                }
-            case .madi:
-                let count = max(1, max(0, madiOutputPorts))
-                for i in 0..<count {
-                    let name = "MADI Out \(portLetter(i))"
-                    ports.append(
-                        digitalPort(
-                            type: .madiOut,
-                            name: name,
-                            direction: .output,
-                            channels: madiChannelsPerPort
-                        )
-                    )
-                }
-            case .dante:
-                ports.append(
-                    digitalPort(
-                        type: .ethernet,
-                        name: "Dante Out (Ethernet)",
-                        direction: .output,
-                        channels: danteChannelsPerLink
-                    )
-                )
-            case .spdif:
-                let p = Port(name: "Digital Out (S/PDIF)", type: .spdifOut, direction: .output)
-                p.channels = [
-                    Channel(
-                        index: 1,
-                        nameLong: "Digital Out (S/PDIF) L/R",
-                        nameShort: "L/R"
-                    )
-                ]
-                ports.append(p)
-            case .midi:
-                // MIDI over USB (bidirectional - appears in both inputs and outputs)
-                ports.append(
-                    digitalPort(
-                        type: .midiOut,
-                        name: "MIDI over USB Out",
-                        direction: .output,
-                        channels: 1
-                    )
-                )
-            case .wordClock:
-                ports.append(
-                    digitalPort(
-                        type: .wordClockOut,
-                        name: "Word Clock Out",
-                        direction: .output,
-                        channels: 1
-                    )
-                )
-            case .aesebu:
-                ports.append(
-                    digitalPort(
-                        type: .aesOut,
-                        name: "Digital Out (AES/EBU)",
-                        direction: .output,
-                        channels: 2
-                    )
-                )
-            }
-        }
+        // Inputs
+        addPorts(adatInputPorts, { "ADAT In \(portLetter($0))" }, type: .adatIn, direction: .input, channels: adatChannelsPerPort)
+        addPorts(madiInputPorts, { "MADI In \(portLetter($0))" }, type: .madiIn, direction: .input, channels: madiChannelsPerPort)
+        addPorts(spdifInputPorts, { "S/PDIF In \($0 + 1)" }, type: .spdifIn, direction: .input, channels: 1, stereoLR: true)
+        addPorts(aesInputPorts, { "AES/EBU In \($0 + 1)" }, type: .aesIn, direction: .input, channels: 2)
+        addPorts(wordClockInputPorts, { "Word Clock In \($0 + 1)" }, type: .wordClockIn, direction: .input, channels: 1)
+
+        // Outputs
+        addPorts(adatOutputPorts, { "ADAT Out \(portLetter($0))" }, type: .adatOut, direction: .output, channels: adatChannelsPerPort)
+        addPorts(madiOutputPorts, { "MADI Out \(portLetter($0))" }, type: .madiOut, direction: .output, channels: madiChannelsPerPort)
+        addPorts(spdifOutputPorts, { "S/PDIF Out \($0 + 1)" }, type: .spdifOut, direction: .output, channels: 1, stereoLR: true)
+        addPorts(aesOutputPorts, { "AES/EBU Out \($0 + 1)" }, type: .aesOut, direction: .output, channels: 2)
+        addPorts(wordClockOutputPorts, { "Word Clock Out \($0 + 1)" }, type: .wordClockOut, direction: .output, channels: 1)
 
         // Computer Interfaces (USB / Thunderbolt / Ethernet, etc.)
         // These are *bidirectional* physical ports. We represent each physical port as a single
@@ -2558,6 +2524,10 @@ struct StudioCanvasView: View {
                         portType = .ethernet
                     case .firewire:
                         portType = .computerHost  // Fallback for older interface
+                    case .avb, .dante:
+                        portType = .ethernet  // Audio over Ethernet
+                    case .midiUSB:
+                        portType = .midiIn  // Placeholder; hidden from In/Out lists like other bidirectional ports
                     }
 
                     // NOTE: PortDirection only supports input/output in the current model.
@@ -2950,8 +2920,12 @@ struct StudioCanvasView: View {
                 madiOutputPortsCount: d.madiOutputPortsCount,
                 ethernetPortsCount: d.ethernetPortsCount,
                 sampleRate: d.sampleRate,
-                digitalInputs: d.digitalInputs,
-                digitalOutputs: d.digitalOutputs,
+                spdifInputPortsCount: d.spdifInputPortsCount,
+                spdifOutputPortsCount: d.spdifOutputPortsCount,
+                aesInputPortsCount: d.aesInputPortsCount,
+                aesOutputPortsCount: d.aesOutputPortsCount,
+                wordClockInputPortsCount: d.wordClockInputPortsCount,
+                wordClockOutputPortsCount: d.wordClockOutputPortsCount,
                 computerInterfaces: d.computerInterfaces,
                 posX: d.posX + 30,
                 posY: d.posY + 30,
@@ -3169,9 +3143,79 @@ struct StudioCanvasView: View {
 
     // MARK: - Port Migration
 
+    /// One-time (idempotent) migration of data created before digital I/O became count based and
+    /// before Dante / MIDI over USB were treated as bidirectional:
+    ///  - legacy on/off digital formats become per-type port counts
+    ///  - Dante / MIDI over USB In+Out port pairs become a single bidirectional interface
+    ///  - existing connections to the old ports are re-pointed at the new endpoint, so nothing is lost
+    ///  - ports are reconciled in place, keeping the UUIDs of everything that still exists
+    private func migrateLegacyDigitalIO(in studio: Studio) {
+        var remap: [UUID: IOEndpointRef] = [:]  // legacy port id -> new endpoint (direction fixed up later)
+        var needsPortRebuild: [DeviceInstance] = []
+
+        for device in studio.devices ?? [] {
+            let countsMigrated = device.migrateLegacyDigitalFormats()
+
+            // Legacy bidirectional ports were stored as separate In / Out ports with fixed names
+            var legacyPorts: [(Port, ComputerInterface)] = []
+            for port in device.ports ?? [] {
+                switch (port.type, port.name) {
+                case (.ethernet, "Dante In (Ethernet)"), (.ethernet, "Dante Out (Ethernet)"):
+                    legacyPorts.append((port, .dante))
+                case (.midiIn, "MIDI over USB In"), (.midiOut, "MIDI over USB Out"):
+                    legacyPorts.append((port, .midiUSB))
+                default:
+                    break
+                }
+            }
+
+            for (port, iface) in legacyPorts {
+                // Make sure the device actually has the bidirectional interface to point at
+                if (device.computerInterfaceCounts[iface] ?? 0) == 0 {
+                    device.computerInterfacesRaw.append(iface.rawValue)
+                }
+                remap[port.id] = IOEndpointRef(
+                    deviceId: device.id,
+                    portId: stableComputerPortId(deviceId: device.id, iface: iface, index: 1),
+                    channelId: stableComputerChannelId(deviceId: device.id, iface: iface, index: 1),
+                    direction: .input
+                )
+            }
+
+            if countsMigrated || !legacyPorts.isEmpty {
+                needsPortRebuild.append(device)
+            }
+        }
+
+        guard !needsPortRebuild.isEmpty else { return }
+
+        // Re-point connections first (needs the store loaded for this studio)
+        if !remap.isEmpty {
+            connectionsStore.load(studioId: studio.id)
+            connectionsStore.remapEndpoints(studioId: studio.id) { ref in
+                guard let target = remap[ref.portId] else { return nil }
+                return IOEndpointRef(
+                    deviceId: target.deviceId,
+                    portId: target.portId,
+                    channelId: target.channelId,
+                    direction: ref.direction
+                )
+            }
+        }
+
+        for device in needsPortRebuild {
+            device.markAsModified()
+            reconcilePorts(of: device)
+        }
+        studio.markAsModified()
+        try? modelContext.save()
+    }
+
     /// Fixes port types for computer interface and MIDI ports without changing port IDs (preserves connections)
     /// Also ensures ports exist for synced devices (CloudKit sync may bring devices with counts but no ports array)
     private func fixComputerInterfacePortTypes(in studio: Studio) {
+        migrateLegacyDigitalIO(in: studio)
+
         // print(
         //     "🔧 Running port type migration for \(studio.devices?.count ?? 0) devices..."
         // )
@@ -3184,7 +3228,9 @@ struct StudioCanvasView: View {
                                 device.madiInputPortsCount > 0 || device.madiOutputPortsCount > 0 ||
                                 device.midiInputPortsCount > 0 || device.midiOutputPortsCount > 0 ||
                                 device.cvInputPortsCount > 0 || device.cvOutputPortsCount > 0 ||
-                                !device.digitalInputsRaw.isEmpty || !device.digitalOutputsRaw.isEmpty ||
+                                device.spdifInputPortsCount > 0 || device.spdifOutputPortsCount > 0 ||
+                                device.aesInputPortsCount > 0 || device.aesOutputPortsCount > 0 ||
+                                device.wordClockInputPortsCount > 0 || device.wordClockOutputPortsCount > 0 ||
                                 !device.computerInterfacesRaw.isEmpty
             
             let hasNoPorts = (device.ports ?? []).isEmpty
@@ -3195,22 +3241,7 @@ struct StudioCanvasView: View {
                 #endif
                 
                 // Generate ports from device metadata
-                device.ports = buildPorts(
-                    audioInputs: device.audioInputsCount,
-                    audioOutputs: device.audioOutputsCount,
-                    digitalInputs: device.digitalInputs,
-                    digitalOutputs: device.digitalOutputs,
-                    adatInputPorts: device.adatInputPortsCount,
-                    adatOutputPorts: device.adatOutputPortsCount,
-                    madiInputPorts: device.madiInputPortsCount,
-                    madiOutputPorts: device.madiOutputPortsCount,
-                    midiInputPorts: device.midiInputPortsCount,
-                    midiOutputPorts: device.midiOutputPortsCount,
-                    cvInputPorts: device.cvInputPortsCount,
-                    cvOutputPorts: device.cvOutputPortsCount,
-                    computerInterfaceCounts: device.computerInterfaceCounts,
-                    sampleRate: device.sampleRate
-                )
+                device.ports = buildPorts(for: device)
             }
             // Fix computer interface ports
             let counts = device.computerInterfaceCounts
@@ -3233,6 +3264,10 @@ struct StudioCanvasView: View {
                         correctPortType = .ethernet
                     case .firewire:
                         correctPortType = .computerHost
+                    case .avb, .dante:
+                        correctPortType = .ethernet
+                    case .midiUSB:
+                        correctPortType = .midiIn
                     }
 
                     // Find and fix ports with matching names but wrong types
@@ -3326,7 +3361,7 @@ struct StudioCanvasView: View {
                                     typeCounts[type, default: 0] += 1
                                 } else if !device.computerInterfaceCounts.isEmpty {
                                     // Computer interface (virtual port)
-                                    typeCounts[.computer, default: 0] += 1
+                                    typeCounts[virtualEndpointVisualType(device: device, portId: edge.from.portId), default: 0] += 1
                                 }
                             }
                         }
@@ -3398,7 +3433,7 @@ struct StudioCanvasView: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                     
-                    Text(ioSummary(from: device.ports))
+                    Text(ioSummary(from: device))
                         .font(.system(size: 8))
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
@@ -3452,7 +3487,7 @@ struct StudioCanvasView: View {
                         Circle()
                             .fill(ConnectionVisualType.digital.color)
                             .frame(width: 12, height: 12)
-                        Text("Digital (ADAT/MADI/S/PDIF)")
+                        Text("Digital (ADAT/MADI/S/PDIF/Dante/AVB)")
                             .font(.caption)
                     }
                     
@@ -3640,7 +3675,7 @@ struct StudioCanvasView: View {
                             let type = ConnectionVisualType.from(portType: port.type)
                             typeCounts[type, default: 0] += 1
                         } else if !device.computerInterfaceCounts.isEmpty {
-                            typeCounts[.computer, default: 0] += 1
+                            typeCounts[virtualEndpointVisualType(device: device, portId: edge.from.portId), default: 0] += 1
                         }
                     }
                 }
@@ -3703,7 +3738,7 @@ struct StudioCanvasView: View {
             let borderColor = colorToHex(deviceColor)
             let nickname = device.nickname.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;")
             let category = device.category.rawValue.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;")
-            let io = ioSummary(from: device.ports).replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;")
+            let io = ioSummary(from: device).replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;")
             
             svg += """
             <!-- Device: \(nickname) -->
@@ -3734,7 +3769,7 @@ struct StudioCanvasView: View {
         
         <!-- Digital -->
         <circle cx="180" cy="\(legendY - 4)" r="6" fill="\(colorToHex(ConnectionVisualType.digital.color))"/>
-        <text x="192" y="\(legendY)" class="legend-text">Digital (ADAT/MADI/S/PDIF)</text>
+        <text x="192" y="\(legendY)" class="legend-text">Digital (ADAT/MADI/S/PDIF/Dante/AVB)</text>
         
         <!-- MIDI -->
         <circle cx="420" cy="\(legendY - 4)" r="6" fill="\(colorToHex(ConnectionVisualType.midi.color))"/>
@@ -4041,6 +4076,12 @@ struct StudioCanvasView: View {
                     sampleRate: SampleRate(
                         rawValue: exportableDevice.sampleRateRaw
                     ) ?? .hz48000,
+                    spdifInputPortsCount: exportableDevice.spdifInputPortsCount ?? 0,
+                    spdifOutputPortsCount: exportableDevice.spdifOutputPortsCount ?? 0,
+                    aesInputPortsCount: exportableDevice.aesInputPortsCount ?? 0,
+                    aesOutputPortsCount: exportableDevice.aesOutputPortsCount ?? 0,
+                    wordClockInputPortsCount: exportableDevice.wordClockInputPortsCount ?? 0,
+                    wordClockOutputPortsCount: exportableDevice.wordClockOutputPortsCount ?? 0,
                     digitalInputs: exportableDevice.digitalInputsRaw.compactMap
                     { DigitalFormat(rawValue: $0) },
                     digitalOutputs: exportableDevice.digitalOutputsRaw
@@ -4311,10 +4352,13 @@ struct StudioCanvasView: View {
 
 // MARK: - File-Level Helper Functions
 
-private func ioSummary(from ports: [Port]?) -> String {
+private func ioSummary(from device: DeviceInstance) -> String {
+    let ports = device.ports
     func chCount(_ type: PortType, _ dir: PortDirection) -> Int {
         (ports ?? [])
             .filter { $0.type == type && $0.direction == dir }
+            // "MIDI over USB" is a bidirectional port; it's reported separately below
+            .filter { !$0.name.hasPrefix(ComputerInterface.midiUSB.rawValue) }
             .reduce(0) { $0 + ($1.channels?.count ?? 0) }
     }
 
@@ -4326,6 +4370,8 @@ private func ioSummary(from ports: [Port]?) -> String {
     let madiout = chCount(.madiOut, .output)
     let spdifin = chCount(.spdifIn, .input)
     let spdifout = chCount(.spdifOut, .output)
+    let aesin = chCount(.aesIn, .input)
+    let aesout = chCount(.aesOut, .output)
     let midiin = chCount(.midiIn, .input)
     let midiout = chCount(.midiOut, .output)
     let cvin = chCount(.cvIn, .input)
@@ -4338,8 +4384,13 @@ private func ioSummary(from ports: [Port]?) -> String {
     if spdifin > 0 || spdifout > 0 {
         parts.append("S/PDIF \(spdifin)/\(spdifout)")
     }
+    if aesin > 0 || aesout > 0 { parts.append("AES/EBU \(aesin)/\(aesout)") }
     if midiin > 0 || midiout > 0 { parts.append("MIDI \(midiin)/\(midiout)") }
     if cvin > 0 || cvout > 0 { parts.append("CV \(cvin)/\(cvout)") }
+
+    // Bidirectional ports (Dante, AVB, MIDI over USB, USB, ...): one count, not in/out
+    let bidirectional = device.bidirectionalSummary
+    if !bidirectional.isEmpty { parts.append(bidirectional) }
 
     return parts.isEmpty ? "I/O: None" : parts.joined(separator: " • ")
 }
@@ -4434,7 +4485,7 @@ private struct DetailCanvas: View {
                 d.categorySymbolName
             },
             subtitleForDevice: { (d: DeviceInstance) -> String in
-                ioSummary(from: d.ports)
+                ioSummary(from: d)
             },
             connectionsStore: connectionsStore,
             onSelectLink: onSelectLink,
@@ -5925,7 +5976,7 @@ private struct ConnectionLineRow: View {
                     // print(
                     //     "  📍 Computer interface port (virtual) -> visual: computer"
                     // )
-                    typeCounts[.computer, default: 0] += 1
+                    typeCounts[virtualEndpointVisualType(device: device, portId: edge.from.portId), default: 0] += 1
                 } else {
                     // print(
                     //     "  ⚠️ Could not find port for edge: deviceId=\(edge.from.deviceId), portId=\(edge.from.portId)"
@@ -6584,8 +6635,12 @@ private struct DeviceEditorSheet: View {
     @Binding var cvOutputPorts: Int
     @Binding var sampleRate: SampleRate
 
-    @Binding var digitalInputs: Set<DigitalFormat>
-    @Binding var digitalOutputs: Set<DigitalFormat>
+    @Binding var spdifInputPorts: Int
+    @Binding var spdifOutputPorts: Int
+    @Binding var aesInputPorts: Int
+    @Binding var aesOutputPorts: Int
+    @Binding var wordClockInputPorts: Int
+    @Binding var wordClockOutputPorts: Int
     @Binding var computerInterfaceCounts: [ComputerInterface: Int]
 
     @Binding var errorMessage: String?
@@ -6607,41 +6662,6 @@ private struct DeviceEditorSheet: View {
 
     let onCancel: () -> Void
     let onSave: () -> Void
-
-    private func syncCountBasedDigitalFormats() {
-        // ADAT is count-based
-        if adatInputPorts > 0 {
-            digitalInputs.insert(.adat)
-        } else {
-            digitalInputs.remove(.adat)
-        }
-        if adatOutputPorts > 0 {
-            digitalOutputs.insert(.adat)
-        } else {
-            digitalOutputs.remove(.adat)
-        }
-
-        // MADI is count-based
-        if madiInputPorts > 0 {
-            digitalInputs.insert(.madi)
-        } else {
-            digitalInputs.remove(.madi)
-        }
-        if madiOutputPorts > 0 {
-            digitalOutputs.insert(.madi)
-        } else {
-            digitalOutputs.remove(.madi)
-        }
-    }
-
-    private var digitalInputFormatChoices: [DigitalFormat] {
-        // Count-based formats configured via steppers
-        DigitalFormat.allCases.filter { $0 != .adat && $0 != .madi }
-    }
-
-    private var digitalOutputFormatChoices: [DigitalFormat] {
-        DigitalFormat.allCases.filter { $0 != .adat && $0 != .madi }
-    }
 
     var body: some View {
         NavigationStack {
@@ -6883,6 +6903,13 @@ private struct DeviceEditorSheet: View {
                                     }
                                 }
 
+                                PortCountStepper(title: "S/PDIF Input Ports", value: $spdifInputPorts)
+                                PortCountStepper(title: "S/PDIF Output Ports", value: $spdifOutputPorts)
+                                PortCountStepper(title: "AES/EBU Input Ports", value: $aesInputPorts)
+                                PortCountStepper(title: "AES/EBU Output Ports", value: $aesOutputPorts)
+                                PortCountStepper(title: "Word Clock Input Ports", value: $wordClockInputPorts)
+                                PortCountStepper(title: "Word Clock Output Ports", value: $wordClockOutputPorts)
+
                                 Stepper(value: $midiInputPorts, in: 0...32) {
                                     HStack {
                                         Text("MIDI Input Ports")
@@ -6923,67 +6950,7 @@ private struct DeviceEditorSheet: View {
                             .padding(8)
                         }
 
-                        GroupBox("Digital Inputs") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                ForEach(digitalInputFormatChoices, id: \.self) {
-                                    f in
-                                    Toggle(
-                                        f.rawValue,
-                                        isOn: Binding(
-                                            get: { digitalInputs.contains(f) },
-                                            set: { isOn in
-                                                if isOn {
-                                                    digitalInputs.insert(f)
-                                                    // MIDI over USB is bidirectional - auto-add to outputs
-                                                    if f == .midi {
-                                                        digitalOutputs.insert(f)
-                                                    }
-                                                } else {
-                                                    digitalInputs.remove(f)
-                                                    // MIDI over USB is bidirectional - auto-remove from outputs
-                                                    if f == .midi {
-                                                        digitalOutputs.remove(f)
-                                                    }
-                                                }
-                                            }
-                                        )
-                                    )
-                                }
-                            }
-                            .padding(8)
-                        }
-
-                        GroupBox("Digital Outputs") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                ForEach(digitalOutputFormatChoices, id: \.self)
-                                { f in
-                                    Toggle(
-                                        f.rawValue,
-                                        isOn: Binding(
-                                            get: { digitalOutputs.contains(f) },
-                                            set: { isOn in
-                                                if isOn {
-                                                    digitalOutputs.insert(f)
-                                                    // MIDI over USB is bidirectional - auto-add to inputs
-                                                    if f == .midi {
-                                                        digitalInputs.insert(f)
-                                                    }
-                                                } else {
-                                                    digitalOutputs.remove(f)
-                                                    // MIDI over USB is bidirectional - auto-remove from inputs
-                                                    if f == .midi {
-                                                        digitalInputs.remove(f)
-                                                    }
-                                                }
-                                            }
-                                        )
-                                    )
-                                }
-                            }
-                            .padding(8)
-                        }
-
-                        GroupBox("Computer I/O") {
+                        GroupBox("Computer & Bidirectional I/O") {
                             VStack(alignment: .leading, spacing: 10) {
                                 ForEach(ComputerInterface.allCases, id: \.self)
                                 { f in
@@ -7099,19 +7066,6 @@ private struct DeviceEditorSheet: View {
                         }
                     }
                     .padding(16)
-                }
-                .onAppear { syncCountBasedDigitalFormats() }
-                .onChange(of: adatInputPorts) { _, _ in
-                    syncCountBasedDigitalFormats()
-                }
-                .onChange(of: adatOutputPorts) { _, _ in
-                    syncCountBasedDigitalFormats()
-                }
-                .onChange(of: madiInputPorts) { _, _ in
-                    syncCountBasedDigitalFormats()
-                }
-                .onChange(of: madiOutputPorts) { _, _ in
-                    syncCountBasedDigitalFormats()
                 }
                 .scrollIndicators(.visible)
                 .frame(
@@ -7314,6 +7268,13 @@ private struct DeviceEditorSheet: View {
                             }
                         }
 
+                        PortCountStepper(title: "S/PDIF Input Ports", value: $spdifInputPorts)
+                        PortCountStepper(title: "S/PDIF Output Ports", value: $spdifOutputPorts)
+                        PortCountStepper(title: "AES/EBU Input Ports", value: $aesInputPorts)
+                        PortCountStepper(title: "AES/EBU Output Ports", value: $aesOutputPorts)
+                        PortCountStepper(title: "Word Clock Input Ports", value: $wordClockInputPorts)
+                        PortCountStepper(title: "Word Clock Output Ports", value: $wordClockOutputPorts)
+
                         Stepper(value: $midiInputPorts, in: 0...32) {
                             HStack {
                                 Text("MIDI Input Ports")
@@ -7356,59 +7317,7 @@ private struct DeviceEditorSheet: View {
 
                     }
 
-                    Section("Digital Inputs") {
-                        ForEach(digitalInputFormatChoices, id: \.self) { f in
-                            Toggle(
-                                f.rawValue,
-                                isOn: Binding(
-                                    get: { digitalInputs.contains(f) },
-                                    set: { isOn in
-                                        if isOn {
-                                            digitalInputs.insert(f)
-                                            // MIDI over USB is bidirectional - auto-add to outputs
-                                            if f == .midi {
-                                                digitalOutputs.insert(f)
-                                            }
-                                        } else {
-                                            digitalInputs.remove(f)
-                                            // MIDI over USB is bidirectional - auto-remove from outputs
-                                            if f == .midi {
-                                                digitalOutputs.remove(f)
-                                            }
-                                        }
-                                    }
-                                )
-                            )
-                        }
-                    }
-
-                    Section("Digital Outputs") {
-                        ForEach(digitalOutputFormatChoices, id: \.self) { f in
-                            Toggle(
-                                f.rawValue,
-                                isOn: Binding(
-                                    get: { digitalOutputs.contains(f) },
-                                    set: { isOn in
-                                        if isOn {
-                                            digitalOutputs.insert(f)
-                                            // MIDI over USB is bidirectional - auto-add to inputs
-                                            if f == .midi {
-                                                digitalInputs.insert(f)
-                                            }
-                                        } else {
-                                            digitalOutputs.remove(f)
-                                            // MIDI over USB is bidirectional - auto-remove from inputs
-                                            if f == .midi {
-                                                digitalInputs.remove(f)
-                                            }
-                                        }
-                                    }
-                                )
-                            )
-                        }
-                    }
-
-                    Section("Computer I/O") {
+                    Section("Computer & Bidirectional I/O") {
                         ForEach(ComputerInterface.allCases, id: \.self) { f in
                             Stepper(
                                 value: Binding(
@@ -7526,19 +7435,6 @@ private struct DeviceEditorSheet: View {
                     }
                 }
                 .scrollIndicators(.visible)
-                .onAppear { syncCountBasedDigitalFormats() }
-                .onChange(of: adatInputPorts) { _, _ in
-                    syncCountBasedDigitalFormats()
-                }
-                .onChange(of: adatOutputPorts) { _, _ in
-                    syncCountBasedDigitalFormats()
-                }
-                .onChange(of: madiInputPorts) { _, _ in
-                    syncCountBasedDigitalFormats()
-                }
-                .onChange(of: madiOutputPorts) { _, _ in
-                    syncCountBasedDigitalFormats()
-                }
                 .navigationTitle(title)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -8033,24 +7929,35 @@ private struct DeviceInspectorOverlay: View {
                     }
                 }
                 
-                if !device.digitalInputs.isEmpty || !device.digitalOutputs.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Digital Formats:")
+                if device.spdifInputPortsCount > 0 || device.spdifOutputPortsCount > 0 {
+                    HStack {
+                        Text("S/PDIF Ports:")
                             .fontWeight(.medium)
-                        if !device.digitalInputs.isEmpty {
-                            Text("  Inputs: \(device.digitalInputs.map { $0.rawValue }.joined(separator: ", "))")
-                        }
-                        if !device.digitalOutputs.isEmpty {
-                            Text("  Outputs: \(device.digitalOutputs.map { $0.rawValue }.joined(separator: ", "))")
-                        }
+                        Text("\(device.spdifInputPortsCount) in / \(device.spdifOutputPortsCount) out")
+                    }
+                }
+                
+                if device.aesInputPortsCount > 0 || device.aesOutputPortsCount > 0 {
+                    HStack {
+                        Text("AES/EBU Ports:")
+                            .fontWeight(.medium)
+                        Text("\(device.aesInputPortsCount) in / \(device.aesOutputPortsCount) out")
+                    }
+                }
+                
+                if device.wordClockInputPortsCount > 0 || device.wordClockOutputPortsCount > 0 {
+                    HStack {
+                        Text("Word Clock Ports:")
+                            .fontWeight(.medium)
+                        Text("\(device.wordClockInputPortsCount) in / \(device.wordClockOutputPortsCount) out")
                     }
                 }
                 
                 if !device.computerInterfaces.isEmpty {
                     HStack {
-                        Text("Computer Interfaces:")
+                        Text("Computer & Bidirectional Ports:")
                             .fontWeight(.medium)
-                        Text(device.computerInterfaces.map { $0.rawValue }.joined(separator: ", "))
+                        Text(device.bidirectionalSummary)
                     }
                 }
             }
@@ -8488,6 +8395,22 @@ private func portSort(_ a: Port, _ b: Port) -> Bool {
     return a.name.localizedStandardCompare(b.name) == .orderedAscending
 }
 
+/// Visual category for an endpoint that is synthesized from `computerInterfaceCounts`.
+/// Dante / AVB are digital audio, MIDI over USB is MIDI; USB, Thunderbolt etc. stay "computer".
+private func virtualEndpointVisualType(device: DeviceInstance, portId: UUID) -> ConnectionVisualType {
+    for (iface, count) in device.computerInterfaceCounts where count > 0 {
+        for i in 1...count
+        where stableComputerPortId(deviceId: device.id, iface: iface, index: i) == portId {
+            switch iface {
+            case .dante, .avb: return .digital
+            case .midiUSB: return .midi
+            default: return .computer
+            }
+        }
+    }
+    return .computer
+}
+
 private func stableComputerPortId(
     deviceId: UUID,
     iface: ComputerInterface,
@@ -8534,7 +8457,7 @@ private struct ConnectionLegendView: View {
                     LegendRow(
                         color: .green,
                         title: "Digital",
-                        description: "ADAT, MADI, S/PDIF, AES, Word Clock"
+                        description: "ADAT, MADI, S/PDIF, AES, Word Clock, Dante, AVB"
                     )
                     LegendRow(
                         color: .purple,
@@ -8716,7 +8639,7 @@ private struct ConnectionMatrixView: View {
                         }
                     } else if let device = studio.devices?.first(where: { $0.id == edge.from.deviceId }),
                               !device.computerInterfaceCounts.isEmpty {
-                        typeCounts[.computer, default: 0] += 1
+                        typeCounts[virtualEndpointVisualType(device: device, portId: edge.from.portId), default: 0] += 1
                         uniqueChannels.insert(edge.from.channelId.uuidString)
                     }
                 }
@@ -8751,7 +8674,7 @@ private struct ConnectionMatrixView: View {
                         }
                     } else if let device = studio.devices?.first(where: { $0.id == edge.from.deviceId }),
                               !device.computerInterfaceCounts.isEmpty {
-                        typeCounts[.computer, default: 0] += 1
+                        typeCounts[virtualEndpointVisualType(device: device, portId: edge.from.portId), default: 0] += 1
                         uniqueChannels.insert(edge.from.channelId.uuidString)
                     }
                 }
@@ -8900,7 +8823,7 @@ private struct ConnectionMatrixView: View {
                 VStack(spacing: 8) {
                     HStack(spacing: 24) {
                         legendItem(color: .blue, label: "Analog")
-                        legendItem(color: .green, label: "Digital (ADAT/MADI/S/PDIF)")
+                        legendItem(color: .green, label: "Digital (ADAT/MADI/S/PDIF/Dante/AVB)")
                         legendItem(color: .purple, label: "MIDI")
                         legendItem(color: .yellow, label: "CV")
                         legendItem(color: .orange, label: "Computer (USB/Thunderbolt/Ethernet)")
@@ -9010,25 +8933,25 @@ private struct ConnectionMatrixView: View {
             parts.append("MADI \(madiIn)/\(madiOut)")
         }
         
-        // S/PDIF and AES/EBU
-        var digitalIns = 0
-        var digitalOuts = 0
-        for input in device.digitalInputs {
-            switch input {
-            case .spdif: digitalIns += 2
-            case .aesebu: digitalIns += 2
-            default: break
-            }
+        // S/PDIF, AES/EBU (stereo pairs) and Word Clock
+        let spdifIn = device.spdifInputPortsCount * 2
+        let spdifOut = device.spdifOutputPortsCount * 2
+        if spdifIn > 0 || spdifOut > 0 {
+            parts.append("S/PDIF \(spdifIn)/\(spdifOut)")
         }
-        for output in device.digitalOutputs {
-            switch output {
-            case .spdif: digitalOuts += 2
-            case .aesebu: digitalOuts += 2
-            default: break
-            }
+        let aesIn = device.aesInputPortsCount * 2
+        let aesOut = device.aesOutputPortsCount * 2
+        if aesIn > 0 || aesOut > 0 {
+            parts.append("AES/EBU \(aesIn)/\(aesOut)")
         }
-        if digitalIns > 0 || digitalOuts > 0 {
-            parts.append("S/PDIF \(digitalIns)/\(digitalOuts)")
+        if device.wordClockInputPortsCount > 0 || device.wordClockOutputPortsCount > 0 {
+            parts.append("Word Clock \(device.wordClockInputPortsCount)/\(device.wordClockOutputPortsCount)")
+        }
+        
+        // Bidirectional ports (one connector carries both directions, so a single count)
+        let bidirectional = device.bidirectionalSummary
+        if !bidirectional.isEmpty {
+            parts.append(bidirectional)
         }
         
         // MIDI
@@ -9657,5 +9580,23 @@ private struct HelpView: View {
         #if os(macOS)
         .frame(minWidth: 600, minHeight: 700)
         #endif
+    }
+}
+
+
+/// Stepper row used for the "number of ports" settings in the device editor.
+private struct PortCountStepper: View {
+    let title: String
+    @Binding var value: Int
+    var range: ClosedRange<Int> = 0...8
+
+    var body: some View {
+        Stepper(value: $value, in: range) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text("\(value)").foregroundStyle(.secondary)
+            }
+        }
     }
 }

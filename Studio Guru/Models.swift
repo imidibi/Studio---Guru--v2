@@ -65,6 +65,11 @@ enum DeviceCategory: String, Codable, CaseIterable {
     case other = "Other"
 }
 
+/// LEGACY: digital formats used to be stored as an on/off set per direction
+/// (`digitalInputsRaw` / `digitalOutputsRaw`). Counts now live in dedicated
+/// `...PortsCount` fields and bidirectional formats (Dante, MIDI over USB) are
+/// modelled as `ComputerInterface`s. This enum remains only so old data can be
+/// decoded and migrated (see `DeviceInstance.migrateLegacyDigitalFormats()`).
 enum DigitalFormat: String, Codable, CaseIterable {
     case adat = "ADAT"
     case aesebu = "AES/EBU"
@@ -75,12 +80,37 @@ enum DigitalFormat: String, Codable, CaseIterable {
     case wordClock = "Word Clock"
 }
 
+/// Bidirectional connections: a single physical port carries both directions, so it is
+/// modelled as one endpoint (not separate In/Out). Quantities are supported per type.
 enum ComputerInterface: String, Codable, CaseIterable {
     case firewire = "FireWire"
     case thunderbolt = "Thunderbolt"
     case usb = "USB"
     case usbc = "USB-C"
     case ethernet = "Ethernet"
+    // Bidirectional digital audio / control connections
+    case avb = "AVB"
+    case dante = "Dante"
+    case midiUSB = "MIDI over USB"
+
+    /// Interfaces this one may be patched to. Only the newer digital types are restricted;
+    /// the classic host interfaces keep their original permissive behaviour.
+    var restrictedPeers: Set<ComputerInterface>? {
+        switch self {
+        case .avb: return [.avb, .ethernet]
+        case .dante: return [.dante, .ethernet]
+        case .midiUSB: return [.midiUSB, .usb, .usbc]
+        case .ethernet: return nil
+        default: return nil
+        }
+    }
+
+    /// True when `self` and `other` are allowed to be connected to each other.
+    func canConnect(to other: ComputerInterface) -> Bool {
+        if let peers = restrictedPeers, !peers.contains(other) { return false }
+        if let peers = other.restrictedPeers, !peers.contains(self) { return false }
+        return true
+    }
 }
 
 enum SampleRate: Int, Codable, CaseIterable {
@@ -177,6 +207,14 @@ final class DeviceInstance {
     var madiInputPortsCount: Int = 0
     var madiOutputPortsCount: Int = 0
     
+    // S/PDIF, AES/EBU and Word Clock port counts (separate In / Out connectors)
+    var spdifInputPortsCount: Int = 0
+    var spdifOutputPortsCount: Int = 0
+    var aesInputPortsCount: Int = 0
+    var aesOutputPortsCount: Int = 0
+    var wordClockInputPortsCount: Int = 0
+    var wordClockOutputPortsCount: Int = 0
+
     // MIDI DIN 5-pin port counts (physical connectors)
     var midiInputPortsCount: Int = 0
     var midiOutputPortsCount: Int = 0
@@ -190,7 +228,9 @@ final class DeviceInstance {
 
     var sampleRateRaw: Int = SampleRate.hz48000.rawValue
 
-    // Digital formats stored as raw strings
+    // LEGACY digital formats (on/off per direction). Superseded by the count fields above and
+    // by `computerInterfacesRaw` for bidirectional formats. Kept so older data/records decode,
+    // and emptied by `migrateLegacyDigitalFormats()`.
     var digitalInputsRaw: [String] = []
     var digitalOutputsRaw: [String] = []
 
@@ -258,6 +298,12 @@ final class DeviceInstance {
          cvOutputPortsCount: Int = 0,
          ethernetPortsCount: Int = 0,
          sampleRate: SampleRate = .hz48000,
+         spdifInputPortsCount: Int = 0,
+         spdifOutputPortsCount: Int = 0,
+         aesInputPortsCount: Int = 0,
+         aesOutputPortsCount: Int = 0,
+         wordClockInputPortsCount: Int = 0,
+         wordClockOutputPortsCount: Int = 0,
          digitalInputs: [DigitalFormat] = [],
          digitalOutputs: [DigitalFormat] = [],
          computerInterfaces: [ComputerInterface] = [],
@@ -285,6 +331,12 @@ final class DeviceInstance {
         self.adatOutputPortsCount = adatOutputPortsCount
         self.madiInputPortsCount = madiInputPortsCount
         self.madiOutputPortsCount = madiOutputPortsCount
+        self.spdifInputPortsCount = spdifInputPortsCount
+        self.spdifOutputPortsCount = spdifOutputPortsCount
+        self.aesInputPortsCount = aesInputPortsCount
+        self.aesOutputPortsCount = aesOutputPortsCount
+        self.wordClockInputPortsCount = wordClockInputPortsCount
+        self.wordClockOutputPortsCount = wordClockOutputPortsCount
         self.midiInputPortsCount = midiInputPortsCount
         self.midiOutputPortsCount = midiOutputPortsCount
         self.cvInputPortsCount = cvInputPortsCount
@@ -343,6 +395,55 @@ final class DeviceInstance {
             }
         }
         return counts
+    }
+
+    /// Human readable list of bidirectional/host ports with quantities, e.g. "USB ×2, Dante, AVB ×4".
+    var bidirectionalSummary: String {
+        let counts = computerInterfaceCounts
+        return ComputerInterface.allCases
+            .compactMap { iface -> String? in
+                guard let n = counts[iface], n > 0 else { return nil }
+                return n > 1 ? "\(iface.rawValue) ×\(n)" : iface.rawValue
+            }
+            .joined(separator: ", ")
+    }
+
+    /// Converts legacy on/off digital formats into per-type port counts. Idempotent: it only raises
+    /// counts that are still zero and then clears the legacy arrays.
+    /// - Returns: true if anything changed (callers should then rebuild ports / remap connections).
+    @discardableResult
+    func migrateLegacyDigitalFormats() -> Bool {
+        guard !digitalInputsRaw.isEmpty || !digitalOutputsRaw.isEmpty else { return false }
+
+        let ins = Set(digitalInputs)
+        let outs = Set(digitalOutputs)
+
+        func raise(_ keyPath: ReferenceWritableKeyPath<DeviceInstance, Int>, _ present: Bool) {
+            if present && self[keyPath: keyPath] == 0 { self[keyPath: keyPath] = 1 }
+        }
+        raise(\.adatInputPortsCount, ins.contains(.adat))
+        raise(\.adatOutputPortsCount, outs.contains(.adat))
+        raise(\.madiInputPortsCount, ins.contains(.madi))
+        raise(\.madiOutputPortsCount, outs.contains(.madi))
+        raise(\.spdifInputPortsCount, ins.contains(.spdif))
+        raise(\.spdifOutputPortsCount, outs.contains(.spdif))
+        raise(\.aesInputPortsCount, ins.contains(.aesebu))
+        raise(\.aesOutputPortsCount, outs.contains(.aesebu))
+        raise(\.wordClockInputPortsCount, ins.contains(.wordClock))
+        raise(\.wordClockOutputPortsCount, outs.contains(.wordClock))
+
+        // Bidirectional formats become a single interface (previously an In + an Out entry).
+        let counts = computerInterfaceCounts
+        if (ins.contains(.dante) || outs.contains(.dante)) && (counts[.dante] ?? 0) == 0 {
+            computerInterfacesRaw.append(ComputerInterface.dante.rawValue)
+        }
+        if (ins.contains(.midi) || outs.contains(.midi)) && (counts[.midiUSB] ?? 0) == 0 {
+            computerInterfacesRaw.append(ComputerInterface.midiUSB.rawValue)
+        }
+        digitalInputsRaw = []
+        digitalOutputsRaw = []
+        markAsModified()
+        return true
     }
 
     var sampleRate: SampleRate {
@@ -640,6 +741,13 @@ struct ExportableDevice: Codable, Sendable {
     let adatOutputPortsCount: Int
     let madiInputPortsCount: Int
     let madiOutputPortsCount: Int
+    // Optional so studio files exported before these existed still decode
+    let spdifInputPortsCount: Int?
+    let spdifOutputPortsCount: Int?
+    let aesInputPortsCount: Int?
+    let aesOutputPortsCount: Int?
+    let wordClockInputPortsCount: Int?
+    let wordClockOutputPortsCount: Int?
     let midiInputPortsCount: Int
     let midiOutputPortsCount: Int
     let cvInputPortsCount: Int
@@ -672,6 +780,12 @@ struct ExportableDevice: Codable, Sendable {
         self.adatOutputPortsCount = device.adatOutputPortsCount
         self.madiInputPortsCount = device.madiInputPortsCount
         self.madiOutputPortsCount = device.madiOutputPortsCount
+        self.spdifInputPortsCount = device.spdifInputPortsCount
+        self.spdifOutputPortsCount = device.spdifOutputPortsCount
+        self.aesInputPortsCount = device.aesInputPortsCount
+        self.aesOutputPortsCount = device.aesOutputPortsCount
+        self.wordClockInputPortsCount = device.wordClockInputPortsCount
+        self.wordClockOutputPortsCount = device.wordClockOutputPortsCount
         self.midiInputPortsCount = device.midiInputPortsCount
         self.midiOutputPortsCount = device.midiOutputPortsCount
         self.cvInputPortsCount = device.cvInputPortsCount

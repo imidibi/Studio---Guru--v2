@@ -421,6 +421,12 @@ class CloudKitSyncManager: ObservableObject {
         record["adatOutputPortsCount"] = device.adatOutputPortsCount
         record["madiInputPortsCount"] = device.madiInputPortsCount
         record["madiOutputPortsCount"] = device.madiOutputPortsCount
+        record["spdifInputPortsCount"] = device.spdifInputPortsCount
+        record["spdifOutputPortsCount"] = device.spdifOutputPortsCount
+        record["aesInputPortsCount"] = device.aesInputPortsCount
+        record["aesOutputPortsCount"] = device.aesOutputPortsCount
+        record["wordClockInputPortsCount"] = device.wordClockInputPortsCount
+        record["wordClockOutputPortsCount"] = device.wordClockOutputPortsCount
         record["midiInputPortsCount"] = device.midiInputPortsCount
         record["midiOutputPortsCount"] = device.midiOutputPortsCount
         record["cvInputPortsCount"] = device.cvInputPortsCount
@@ -648,6 +654,12 @@ class CloudKitSyncManager: ObservableObject {
         device.adatOutputPortsCount = record["adatOutputPortsCount"] as? Int ?? device.adatOutputPortsCount
         device.madiInputPortsCount = record["madiInputPortsCount"] as? Int ?? device.madiInputPortsCount
         device.madiOutputPortsCount = record["madiOutputPortsCount"] as? Int ?? device.madiOutputPortsCount
+        device.spdifInputPortsCount = record["spdifInputPortsCount"] as? Int ?? device.spdifInputPortsCount
+        device.spdifOutputPortsCount = record["spdifOutputPortsCount"] as? Int ?? device.spdifOutputPortsCount
+        device.aesInputPortsCount = record["aesInputPortsCount"] as? Int ?? device.aesInputPortsCount
+        device.aesOutputPortsCount = record["aesOutputPortsCount"] as? Int ?? device.aesOutputPortsCount
+        device.wordClockInputPortsCount = record["wordClockInputPortsCount"] as? Int ?? device.wordClockInputPortsCount
+        device.wordClockOutputPortsCount = record["wordClockOutputPortsCount"] as? Int ?? device.wordClockOutputPortsCount
         device.midiInputPortsCount = record["midiInputPortsCount"] as? Int ?? device.midiInputPortsCount
         device.midiOutputPortsCount = record["midiOutputPortsCount"] as? Int ?? device.midiOutputPortsCount
         device.cvInputPortsCount = record["cvInputPortsCount"] as? Int ?? device.cvInputPortsCount
