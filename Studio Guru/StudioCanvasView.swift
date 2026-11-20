@@ -6867,7 +6867,7 @@ private struct DeviceEditorSheet: View {
 
                                 Divider().padding(.vertical, 4)
 
-                                Stepper(value: $adatInputPorts, in: 0...8) {
+                                Stepper(value: $adatInputPorts, in: 0...16) {
                                     HStack {
                                         Text("ADAT Input Ports")
                                         Spacer()
@@ -6876,7 +6876,7 @@ private struct DeviceEditorSheet: View {
                                     }
                                 }
 
-                                Stepper(value: $adatOutputPorts, in: 0...8) {
+                                Stepper(value: $adatOutputPorts, in: 0...16) {
                                     HStack {
                                         Text("ADAT Output Ports")
                                         Spacer()
@@ -6885,7 +6885,7 @@ private struct DeviceEditorSheet: View {
                                     }
                                 }
 
-                                Stepper(value: $madiInputPorts, in: 0...8) {
+                                Stepper(value: $madiInputPorts, in: 0...16) {
                                     HStack {
                                         Text("MADI Input Ports")
                                         Spacer()
@@ -6894,7 +6894,7 @@ private struct DeviceEditorSheet: View {
                                     }
                                 }
 
-                                Stepper(value: $madiOutputPorts, in: 0...8) {
+                                Stepper(value: $madiOutputPorts, in: 0...16) {
                                     HStack {
                                         Text("MADI Output Ports")
                                         Spacer()
@@ -6974,7 +6974,7 @@ private struct DeviceEditorSheet: View {
                                                 }
                                             }
                                         ),
-                                        in: 0...8
+                                        in: 0...32
                                     ) {
                                         HStack {
                                             Text(f.rawValue)
@@ -7231,7 +7231,7 @@ private struct DeviceEditorSheet: View {
                             }
                         }
 
-                        Stepper(value: $adatInputPorts, in: 0...8) {
+                        Stepper(value: $adatInputPorts, in: 0...16) {
                             HStack {
                                 Text("ADAT Input Ports")
                                 Spacer()
@@ -7240,7 +7240,7 @@ private struct DeviceEditorSheet: View {
                                 )
                             }
                         }
-                        Stepper(value: $adatOutputPorts, in: 0...8) {
+                        Stepper(value: $adatOutputPorts, in: 0...16) {
                             HStack {
                                 Text("ADAT Output Ports")
                                 Spacer()
@@ -7249,7 +7249,7 @@ private struct DeviceEditorSheet: View {
                                 )
                             }
                         }
-                        Stepper(value: $madiInputPorts, in: 0...8) {
+                        Stepper(value: $madiInputPorts, in: 0...16) {
                             HStack {
                                 Text("MADI Input Ports")
                                 Spacer()
@@ -7258,7 +7258,7 @@ private struct DeviceEditorSheet: View {
                                 )
                             }
                         }
-                        Stepper(value: $madiOutputPorts, in: 0...8) {
+                        Stepper(value: $madiOutputPorts, in: 0...16) {
                             HStack {
                                 Text("MADI Output Ports")
                                 Spacer()
@@ -7335,7 +7335,7 @@ private struct DeviceEditorSheet: View {
                                         }
                                     }
                                 ),
-                                in: 0...8
+                                in: 0...32
                             ) {
                                 HStack {
                                     Text(f.rawValue)
@@ -8048,7 +8048,7 @@ private struct DeviceInspectorOverlay: View {
         if p1.direction != p2.direction {
             return p1.direction == .input
         }
-        return p1.name < p2.name
+        return p1.name.localizedStandardCompare(p2.name) == .orderedAscending
     }
 
     @ViewBuilder
@@ -9588,7 +9588,7 @@ private struct HelpView: View {
 private struct PortCountStepper: View {
     let title: String
     @Binding var value: Int
-    var range: ClosedRange<Int> = 0...8
+    var range: ClosedRange<Int> = 0...64
 
     var body: some View {
         Stepper(value: $value, in: range) {
