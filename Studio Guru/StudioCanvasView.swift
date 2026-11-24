@@ -363,19 +363,21 @@ struct StudioCanvasView: View {
         }
         .sheet(isPresented: $isShowingGuru) {
             GuruHomeView()
+                .resizableMacSheet(minWidth: 600, minHeight: 500, idealWidth: 860, idealHeight: 660)
         }
         .sheet(isPresented: $isShowingSettings) {
             SettingsView()
+                .resizableMacSheet(minWidth: 500, minHeight: 450, idealWidth: 640, idealHeight: 660)
         }
         .sheet(isPresented: $isShowingConnectionLegend) {
             ConnectionLegendView()
+                .resizableMacSheet(minWidth: 420, minHeight: 400, idealWidth: 520, idealHeight: 600)
         }
         #if os(macOS)
         .sheet(isPresented: $isShowingMatrixView) {
             if let studio = studios.first(where: { $0.id == selectedStudioId }) {
                 ConnectionMatrixView(studio: studio, connectionsStore: connectionsStore)
-                    .frame(minWidth: 1200, maxWidth: .infinity, minHeight: 800, maxHeight: .infinity)
-                    .presentationSizing(.fitted)
+                    .resizableMacSheet(minWidth: 800, minHeight: 500, idealWidth: 1200, idealHeight: 760)
             }
         }
         #else
@@ -387,10 +389,12 @@ struct StudioCanvasView: View {
         #endif
         .sheet(isPresented: $isShowingHelp) {
             HelpView()
+                .resizableMacSheet(minWidth: 600, minHeight: 500, idealWidth: 720, idealHeight: 680)
         }
         .sheet(isPresented: $isShowingPaywall) {
             PaywallView(reason: paywallReason)
                 .environmentObject(storeManager)
+                .resizableMacSheet(minWidth: 500, minHeight: 500, idealWidth: 560, idealHeight: 680)
         }
         .fileExporter(
             isPresented: $isShowingExportPicker,
@@ -920,9 +924,11 @@ struct StudioCanvasView: View {
             }
             .sheet(isPresented: $isShowingDeviceEditor) {
                 deviceEditorSheetContent
+                    .resizableMacSheet(minWidth: 560, minHeight: 500, idealWidth: 640, idealHeight: 700)
             }
             .sheet(isPresented: $isShowingConnectionsEditor) {
                 connectionEditorContent
+                    .resizableMacSheet(minWidth: 860, minHeight: 560, idealWidth: 980, idealHeight: 680)
             }
             .sheet(
                 isPresented: $isShowingConnectionExplosion,
@@ -941,9 +947,11 @@ struct StudioCanvasView: View {
                 }
             ) {
                 explosionSheetContent
+                    .resizableMacSheet(minWidth: 600, minHeight: 500, idealWidth: 800, idealHeight: 680)
             }
             .sheet(isPresented: $isShowingMoveDeviceDialog) {
                 moveDeviceSheetContent
+                    .resizableMacSheet(minWidth: 420, minHeight: 300, idealWidth: 480, idealHeight: 420)
             }
             // Device Inspector Overlay Sheet
             .onReceive(selectionState.$selection) { sel in
@@ -983,6 +991,7 @@ struct StudioCanvasView: View {
                 )
             ) { item in
                 inspectorSheetContent(item: item)
+                    .resizableMacSheet(minWidth: 520, minHeight: 500, idealWidth: 640, idealHeight: 700)
                     .presentationDetents([.large, .medium], selection: $inspectorDetent)
             }
             .alert("Delete Device", isPresented: $isShowingDeleteDeviceConfirm)
@@ -1056,6 +1065,7 @@ struct StudioCanvasView: View {
             selectionState.selection = nil
         }) {
             deviceEditorSheetContent
+                .resizableMacSheet(minWidth: 560, minHeight: 500, idealWidth: 640, idealHeight: 700)
         }
         .sheet(item: $assignmentData) { data in
             AssignGearSheet(
@@ -1071,6 +1081,7 @@ struct StudioCanvasView: View {
                     assignmentData = nil
                 }
             )
+            .resizableMacSheet(minWidth: 420, minHeight: 300, idealWidth: 480, idealHeight: 420)
         }
         .alert("Delete Device", isPresented: $isShowingDeleteDeviceConfirm) {
             Button("Delete", role: .destructive) { deletePendingDevice() }
@@ -1097,6 +1108,7 @@ struct StudioCanvasView: View {
             )
         ) { item in
             inspectorSheetContent(item: item)
+                .resizableMacSheet(minWidth: 520, minHeight: 500, idealWidth: 640, idealHeight: 700)
                 .presentationDetents([.large, .medium], selection: $inspectorDetent)
         }
     }
@@ -5590,6 +5602,7 @@ private struct InspectorPanel: View {
                                 url: item.url,
                                 title: item.title
                             )
+                            .resizableMacSheet(minWidth: 800, minHeight: 560, idealWidth: 1000, idealHeight: 700)
                         }
                     #endif
                         .alert("Manual Not Available", isPresented: $isShowingManualError) {
@@ -5696,6 +5709,7 @@ private struct DiagramThumb: View {
         }
         .sheet(isPresented: $isShowingZoom) {
             DiagramZoomView(image: image)
+                .resizableMacSheet(minWidth: 600, minHeight: 450, idealWidth: 900, idealHeight: 680)
         }
     }
 }
@@ -7789,6 +7803,7 @@ private struct DeviceInspectorOverlay: View {
                                 url: item.url,
                                 title: item.title
                             )
+                            .resizableMacSheet(minWidth: 800, minHeight: 560, idealWidth: 1000, idealHeight: 700)
                         }
                     #endif
                         .alert("Manual Not Available", isPresented: $isShowingManualError) {

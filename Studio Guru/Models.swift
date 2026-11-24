@@ -2036,3 +2036,30 @@ struct ExportableContribution: Codable, Sendable {
         self.modifiedAt = contribution.modifiedAt
     }
 }
+
+
+// MARK: - macOS sheet sizing
+
+extension View {
+    /// macOS sheets default to a fixed size taken from their content, so they can't be resized and
+    /// can outgrow the screen (hiding the Done button). This makes a sheet user-resizable, opening
+    /// at a modest ideal size that fits laptop displays. No-op on other platforms.
+    @ViewBuilder
+    func resizableMacSheet(
+        minWidth: CGFloat = 480,
+        minHeight: CGFloat = 400,
+        idealWidth: CGFloat = 640,
+        idealHeight: CGFloat = 640
+    ) -> some View {
+        #if os(macOS)
+        self
+            .frame(
+                minWidth: minWidth, idealWidth: idealWidth, maxWidth: .infinity,
+                minHeight: minHeight, idealHeight: idealHeight, maxHeight: .infinity
+            )
+            .presentationSizing(.fitted)
+        #else
+        self
+        #endif
+    }
+}

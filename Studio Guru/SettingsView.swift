@@ -598,9 +598,11 @@ struct SettingsView: View {
             .sheet(isPresented: $isShowingPaywall) {
                 PaywallView(reason: paywallReason)
                     .environmentObject(storeManager)
+                    .resizableMacSheet(minWidth: 500, minHeight: 500, idealWidth: 560, idealHeight: 680)
             }
             .sheet(isPresented: $showingDiagnostics) {
                 iCloudDiagnosticsView(diagnostics: diagnostics)
+                    .resizableMacSheet(minWidth: 500, minHeight: 400, idealWidth: 640, idealHeight: 520)
             }
             .onAppear {
                 startNetworkMonitoring()
